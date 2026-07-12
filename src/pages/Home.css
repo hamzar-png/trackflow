@@ -1,0 +1,76 @@
+.home-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.home-logo {
+  font-size: 3rem;
+  color: #38bdf8;
+  margin-bottom: 8px;
+}
+
+.home-subtitle {
+  color: #94a3b8;
+  font-size: 1.2rem;
+  margin-bottom: 48px;
+}
+
+.home-grid {
+  display: flex;
+  gap: 24px;
+  max-width: 700px;
+  width: 100%;
+}
+
+.home-card {
+  flex: 1;
+  background: #1e293b;
+  border: 2px solid #334155;
+  border-radius: 16px;
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.home-card:hover {
+  border-color: #38bdf8;
+  background: #263348;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(56, 189, 248, 0.15);
+}
+
+.home-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.home-card h2 {
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+}
+
+.home-card p {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.home-link {
+  color: #38bdf8;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 600px) {
+  .home-grid {
+    flex-direction: column;
+  }
+}
