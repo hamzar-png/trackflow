@@ -173,49 +173,55 @@ function App() {
     }
   };
 
-  const importaDaGLS = async () => {
-    try {
-      const { getAllParcels } = await import('./services/glsApi');
-      const data = await getAllParcels();
+const importaDaGLS = async () => {
+  try {
+    const response = await fetch('/api/gls-import', {
+      method: 'POST',
+    });
 
-      if (data.tuListResponse && data.tuListResponse.tuList) {
-        const { data: { user } } = await supabase.auth.getUser();
-
-        for (const item of data.tuListResponse.tuList) {
-          const nuovaSpedizione = {
-            tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-            cliente: item.consignee?.name || 'Da assegnare',
-            corriere: 'GLS',
-            tracking: item.tuNo || item.referenceNo || '',
-            stato: item.status || 'In transito',
-            data: new Date().toLocaleDateString('it-IT'),
-            tipo: 'tracking',
-            ddt: '',
-            partenza: '',
-            destinazione: item.consignee?.city || '',
-            note: '',
-            user_id: user.id,
-          };
-
-          const { error } = await supabase
-            .from('spedizioni')
-            .insert([nuovaSpedizione]);
-
-          if (error) {
-            console.error('Errore import:', error);
-          }
-        }
-
-        caricaSpedizioniMittente(user.id);
-        alert('Importazione completata!');
-      } else {
-        alert('Nessuna spedizione trovata.');
-      }
-    } catch (error) {
-      console.error('Errore import GLS:', error);
-      alert('Errore durante l\'importazione: ' + error.message);
+    if (!response.ok) {
+      throw new Error('Errore server');
     }
-  };
+
+    const data = await response.json();
+
+    if (data.error) {
+      alert('Errore: ' + data.error);
+      return;
+    }
+
+    if (data.tuListResponse && data.tuListResponse.tuList) {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      for (const item of data.tuListResponse.tuList) {
+        const nuovaSpedizione = {
+          tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
+          cliente: item.consignee?.name || 'Da assegnare',
+          corriere: 'GLS',
+          tracking: item.tuNo || item.referenceNo || '',
+          stato: item.status || 'In transito',
+          data: new Date().toLocaleDateString('it-IT'),
+          tipo: 'tracking',
+          ddt: '',
+          partenza: '',
+          destinazione: item.consignee?.city || '',
+          note: '',
+          user_id: user.id,
+        };
+
+        await supabase.from('spedizioni').insert([nuovaSpedizione]);
+      }
+
+      caricaSpedizioniMittente(user.id);
+      alert('Importazione completata!');
+    } else {
+      alert('Nessuna spedizione trovata.');
+    }
+  } catch (error) {
+    console.error('Errore import GLS:', error);
+    alert('Errore durante l\'importazione: ' + error.message);
+  }
+};
 
   const eliminaSpedizione = async (trackingId) => {
     await supabase.from('spedizioni').delete().eq('tracking_id', trackingId);
