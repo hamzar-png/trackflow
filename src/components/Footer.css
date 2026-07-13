@@ -1,17 +1,16 @@
 .footer {
   width: 100%;
   max-width: 700px;
-  margin: 40px auto 0 auto;
-  text-align: center;
+  margin: 40px auto 0;
   padding: 20px 0;
   border-top: 1px solid #334155;
-  background: transparent;
+  text-align: center;
 }
 
 .footer p {
+  margin: 0;
   color: #94a3b8;
   font-size: 0.8rem;
-  margin: 0;
 }
 
 .footer a {
