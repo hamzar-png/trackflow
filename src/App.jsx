@@ -186,9 +186,9 @@ const importaDaGLS = async () => {
     const data = await response.json();
 
     if (data.error) {
-      alert('Errore: ' + data.error);
-      return;
-    }
+  alert('Errore: ' + data.error + '\n' + (data.details || ''));
+  return;
+}
 
     if (data.tuListResponse && data.tuListResponse.tuList) {
       const { data: { user } } = await supabase.auth.getUser();
