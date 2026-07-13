@@ -261,7 +261,7 @@ function App() {
         }
       />
       <Route
-        path="/dashboard"
+        path="/dashboard" onImportaGLS={ruolo === 'mittente' ? importaDaGLS : null}
         element={
           isLoggedIn ? (
             <Dashboard
@@ -272,6 +272,7 @@ function App() {
               onEliminaSpedizione={ruolo === 'mittente' ? eliminaSpedizione : null}
               onImportaGLS={ruolo === 'mittente' ? importaDaGLS : null}
               ruolo={ruolo}
+          
             />
           ) : (
             <Navigate to="/" />

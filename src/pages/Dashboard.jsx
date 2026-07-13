@@ -5,7 +5,7 @@ import NuovaSpedizione from './NuovaSpedizione';
 import GestioneDestinatari from './GestioneDestinatari';
 import Footer from '../components/Footer';
 
-function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onEliminaSpedizione, ruolo }) {
+function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onEliminaSpedizione, onImportaGLS, ruolo }) {
   const navigate = useNavigate();
   const [mostraForm, setMostraForm] = useState(false);
 
