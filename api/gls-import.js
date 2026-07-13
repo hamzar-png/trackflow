@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   try {
-    const authResponse = await fetch('https://api.gls-group.com/oauth/token', {
+    const authResponse = await fetch('https://api-sandbox.gls-group.net/oauth2/v2/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
