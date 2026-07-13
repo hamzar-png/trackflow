@@ -179,16 +179,17 @@ const importaDaGLS = async () => {
       method: 'POST',
     });
 
-    if (!response.ok) {
-      throw new Error('Errore server');
-    }
-
     const data = await response.json();
 
+    if (!response.ok) {
+      alert('Errore server: ' + (data.error || 'Sconosciuto') + '\nStatus: ' + (data.status || 'N/D') + '\n' + (data.details || ''));
+      return;
+    }
+
     if (data.error) {
-  alert('Errore: ' + data.error + '\n' + (data.details || ''));
-  return;
-}
+      alert('Errore: ' + data.error);
+      return;
+    }
 
     if (data.tuListResponse && data.tuListResponse.tuList) {
       const { data: { user } } = await supabase.auth.getUser();
@@ -215,7 +216,7 @@ const importaDaGLS = async () => {
       caricaSpedizioniMittente(user.id);
       alert('Importazione completata!');
     } else {
-      alert('Nessuna spedizione trovata.');
+      alert('Nessuna spedizione trovata. Dati ricevuti: ' + JSON.stringify(data).substring(0, 200));
     }
   } catch (error) {
     console.error('Errore import GLS:', error);
