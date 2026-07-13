@@ -1,7 +1,7 @@
 const GLS_CONFIG = {
   apiKey: 'nFVvJqAffA6KTEmffqON9WlfMTuoBie2',
   secret: '7zZfF8KBSKMuAHJI',
-  authUrl: 'https://api-sandbox.gls-group.net/oauth2/v2/token',
+  authUrl: 'https://api.gls-group.com/oauth/token',
   trackingUrl: 'https://api-sandbox.gls-group.net/track-and-trace-v1/tracking/simple/trackids',
   parcelsUrl: 'https://api-sandbox.gls-group.net/shipit-farm/v1/backend/rs/tracking/parcels',
 };
@@ -20,14 +20,15 @@ async function getAccessToken() {
   });
 
   if (!response.ok) {
-    throw new Error('Errore autenticazione GLS');
+    const errorText = await response.text();
+    console.error('Auth error:', errorText);
+    throw new Error('Errore autenticazione GLS: ' + response.status);
   }
 
   const data = await response.json();
   return data.access_token;
 }
 
-// Traccia un singolo tracking
 export async function trackGLS(trackingNumber) {
   const token = await getAccessToken();
 
@@ -46,7 +47,6 @@ export async function trackGLS(trackingNumber) {
   return await response.json();
 }
 
-// Ottieni TUTTE le spedizioni dell'account
 export async function getAllParcels(filters = {}) {
   const token = await getAccessToken();
 
@@ -61,13 +61,14 @@ export async function getAllParcels(filters = {}) {
       tuListRequest: {
         dateFrom: filters.dateFrom || '2026-01-01',
         dateTo: filters.dateTo || new Date().toISOString().split('T')[0],
-        ...filters,
       },
     }),
   });
 
   if (!response.ok) {
-    throw new Error('Errore nel recupero spedizioni');
+    const errorText = await response.text();
+    console.error('Parcels error:', errorText);
+    throw new Error('Nessuna spedizione trovata o accesso negato.');
   }
 
   return await response.json();
