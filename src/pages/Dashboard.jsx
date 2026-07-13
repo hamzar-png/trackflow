@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 import NuovaSpedizione from './NuovaSpedizione';
 import GestioneDestinatari from './GestioneDestinatari';
+import Footer from '../components/Footer';
 
 function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onEliminaSpedizione, ruolo }) {
   const navigate = useNavigate();
@@ -115,6 +116,7 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
           </table>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

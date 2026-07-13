@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './DettaglioSpedizione.css';
+import Footer from '../components/Footer';
 
 function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
   const { trackingId } = useParams();

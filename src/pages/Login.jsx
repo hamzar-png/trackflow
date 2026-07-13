@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './Login.css';
+import Footer from '../components/Footer';
 
 function Login({ onLogin }) {
   const { tipo } = useParams(); // 'mittente' o 'destinatario'

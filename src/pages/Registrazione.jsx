@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import './Registrazione.css';
+import Footer from '../components/Footer';
 
 function Registrazione() {
   const navigate = useNavigate();
@@ -159,6 +160,8 @@ function Registrazione() {
           </span>
         </p>
       </div>
+
+      <Footer />
     </div>
   );
 }

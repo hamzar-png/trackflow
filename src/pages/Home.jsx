@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
+import Footer from '../components/Footer';
 
 function Home() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ function Home() {
           <p>Aspetti una consegna?<br />Accedi con le credenziali fornite dal tuo mittente.</p>
           <span className="home-link">Accedi →</span>
         </div>
+      <Footer />
       </div>
     </div>
   );
