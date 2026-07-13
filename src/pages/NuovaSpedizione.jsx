@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { trackGLS } from '../services/glsApi';
 import './NuovaSpedizione.css';
 
 function NuovaSpedizione({ onAggiungi, onChiudi }) {
   const [tipo, setTipo] = useState('');
   const [destinatari, setDestinatari] = useState([]);
+  const [loadingApi, setLoadingApi] = useState(false);
   const [formData, setFormData] = useState({
     cliente: '',
     corriere: '',
@@ -38,6 +40,37 @@ function NuovaSpedizione({ onAggiungi, onChiudi }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleApiSearch = async () => {
+    if (!formData.tracking) {
+      alert('Inserisci un numero tracking');
+      return;
+    }
+
+    setLoadingApi(true);
+    try {
+      const result = await trackGLS(formData.tracking);
+      console.log('Risultato GLS:', result);
+
+      // Prendi il primo pacco
+      const parcel = result.parcels?.[0] || result[0];
+
+      if (parcel) {
+        setFormData({
+          ...formData,
+          stato: parcel.status || 'In transito',
+          data: new Date().toLocaleDateString('it-IT'),
+        });
+        alert('Dati recuperati da GLS!');
+      } else {
+        alert('Nessun dato trovato per questo tracking.');
+      }
+    } catch (error) {
+      console.error('Errore API GLS:', error);
+      alert('Errore durante la ricerca: ' + error.message);
+    }
+    setLoadingApi(false);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -51,7 +84,7 @@ function NuovaSpedizione({ onAggiungi, onChiudi }) {
         cliente: formData.cliente,
         corriere: formData.corriere,
         tracking: formData.tracking,
-        stato: 'In attesa',
+        stato: formData.stato || 'In attesa',
         data: formData.data,
         tipo: 'tracking',
         ddt: '',
@@ -154,14 +187,27 @@ function NuovaSpedizione({ onAggiungi, onChiudi }) {
               </div>
               <div className="form-group">
                 <label>Numero tracking *</label>
-                <input
-                  type="text"
-                  name="tracking"
-                  value={formData.tracking}
-                  onChange={handleChange}
-                  placeholder="Es. BRT123456789"
-                  required
-                />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    name="tracking"
+                    value={formData.tracking}
+                    onChange={handleChange}
+                    placeholder="Es. BRT123456789"
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  {formData.corriere === 'GLS' && (
+                    <button
+                      type="button"
+                      className="api-search-btn"
+                      onClick={handleApiSearch}
+                      disabled={loadingApi}
+                    >
+                      {loadingApi ? '🔍...' : '🔍 Cerca'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ) : (

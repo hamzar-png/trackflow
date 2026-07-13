@@ -120,3 +120,24 @@
 .salva-btn:hover {
   background: #7dd3fc;
 }
+.api-search-btn {
+  padding: 10px 14px;
+  background: #f59e0b;
+  color: #0f172a;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.api-search-btn:hover {
+  background: #fbbf24;
+}
+
+.api-search-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
