@@ -153,7 +153,7 @@ function App() {
       destinazione: nuovaSpedizione.destinazione || '',
       note: nuovaSpedizione.note || '',
       user_id: user.id,
-    destinatario_id: nuovaSpedizione.destinatario_id || null,
+      destinatario_id: nuovaSpedizione.destinatario_id || null,
     };
 
     const { data, error } = await supabase
@@ -162,16 +162,60 @@ function App() {
       .select()
       .single();
 
-   if (error) {
-    console.error('Errore inserimento:', error);
-    alert('Errore durante il salvataggio: ' + error.message);
-    return;
-  }
+    if (error) {
+      console.error('Errore inserimento:', error);
+      alert('Errore durante il salvataggio: ' + error.message);
+      return;
+    }
 
-  if (data) {
-    setSpedizioni([data, ...spedizioni]);
-  }
-};
+    if (data) {
+      setSpedizioni([data, ...spedizioni]);
+    }
+  };
+
+  const importaDaGLS = async () => {
+    try {
+      const { getAllParcels } = await import('./services/glsApi');
+      const data = await getAllParcels();
+
+      if (data.tuListResponse && data.tuListResponse.tuList) {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        for (const item of data.tuListResponse.tuList) {
+          const nuovaSpedizione = {
+            tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
+            cliente: item.consignee?.name || 'Da assegnare',
+            corriere: 'GLS',
+            tracking: item.tuNo || item.referenceNo || '',
+            stato: item.status || 'In transito',
+            data: new Date().toLocaleDateString('it-IT'),
+            tipo: 'tracking',
+            ddt: '',
+            partenza: '',
+            destinazione: item.consignee?.city || '',
+            note: '',
+            user_id: user.id,
+          };
+
+          const { error } = await supabase
+            .from('spedizioni')
+            .insert([nuovaSpedizione]);
+
+          if (error) {
+            console.error('Errore import:', error);
+          }
+        }
+
+        caricaSpedizioniMittente(user.id);
+        alert('Importazione completata!');
+      } else {
+        alert('Nessuna spedizione trovata.');
+      }
+    } catch (error) {
+      console.error('Errore import GLS:', error);
+      alert('Errore durante l\'importazione: ' + error.message);
+    }
+  };
 
   const eliminaSpedizione = async (trackingId) => {
     await supabase.from('spedizioni').delete().eq('tracking_id', trackingId);
@@ -226,6 +270,7 @@ function App() {
               spedizioni={spedizioni}
               onAggiungiSpedizione={ruolo === 'mittente' ? aggiungiSpedizione : null}
               onEliminaSpedizione={ruolo === 'mittente' ? eliminaSpedizione : null}
+              onImportaGLS={ruolo === 'mittente' ? importaDaGLS : null}
               ruolo={ruolo}
             />
           ) : (

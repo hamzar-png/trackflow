@@ -23,21 +23,31 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
 
       <main className="dashboard-main">
         <div className="dashboard-top">
-          <div>
-            <h2>Le tue spedizioni</h2>
-            <p className="dashboard-subtitle">
-              Monitora in tempo reale tutte le spedizioni dei tuoi clienti
-            </p>
-          </div>
-          {ruolo === 'mittente' && (
-            <button
-              className="nuova-spedizione-button"
-              onClick={() => setMostraForm(!mostraForm)}
-            >
-              {mostraForm ? '✕ Chiudi' : '+ Nuova spedizione'}
-            </button>
-          )}
-        </div>
+  <div>
+    <h2>Le tue spedizioni</h2>
+    <p className="dashboard-subtitle">
+      Monitora in tempo reale tutte le spedizioni dei tuoi clienti
+    </p>
+  </div>
+  <div style={{ display: 'flex', gap: '10px' }}>
+    {ruolo === 'mittente' && onImportaGLS && (
+      <button
+        className="importa-gls-btn"
+        onClick={onImportaGLS}
+      >
+        📥 Importa da GLS
+      </button>
+    )}
+    {ruolo === 'mittente' && (
+      <button
+        className="nuova-spedizione-button"
+        onClick={() => setMostraForm(!mostraForm)}
+      >
+        {mostraForm ? '✕ Chiudi' : '+ Nuova spedizione'}
+      </button>
+    )}
+  </div>
+</div>
 
         {ruolo === 'mittente' && <GestioneDestinatari />}
 

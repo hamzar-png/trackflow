@@ -154,3 +154,19 @@
 .elimina-btn:hover {
   background: #450a0a;
 }
+.importa-gls-btn {
+  padding: 10px 20px;
+  background: #f59e0b;
+  color: #0f172a;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.importa-gls-btn:hover {
+  background: #fbbf24;
+}
