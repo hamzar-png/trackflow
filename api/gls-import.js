@@ -6,27 +6,29 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Credenziali mancanti' });
     }
 
-    // Step 1: Login
-    const loginResponse = await fetch('https://weblabeling.gls-italy.com/Home/Login', {
+    // Step 1: Login con redirect follow per ottenere i cookie
+    const loginRes = await fetch('https://weblabeling.gls-italy.com/Home/Login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ Sede: sede.toUpperCase(), Cliente: codiceCliente, Password: password }),
-      redirect: 'manual',
+      redirect: 'follow',
     });
 
-    const allCookies = loginResponse.headers.get('set-cookie') || '';
+    // Raccogli tutti i cookie dalla risposta
+    const rawCookies = loginRes.headers.getSetCookie?.() || [];
+    const allCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+
     if (!allCookies || allCookies.length < 10) {
-      return res.status(500).json({ error: 'Login fallito.' });
+      return res.status(500).json({ error: 'Login fallito. Cookie non ricevuti.' });
     }
 
-    const cookies = allCookies.split(',').map(c => c.split(';')[0].trim()).join('; ');
-
-    // Step 2: Visita TrackTrace
+    // Step 2: Visita la pagina TrackTrace
     const pageRes = await fetch('https://weblabeling.gls-italy.com/Secure_Page/TrackTrace.aspx', {
-      headers: { 'Cookie': cookies },
+      headers: { 'Cookie': allCookies },
     });
     const pageHtml = await pageRes.text();
 
+    // Estrai VIEWSTATE
     const getHidden = (name) => {
       const match = pageHtml.match(new RegExp(`id="${name}"\\s+value="([^"]*)"`));
       return match ? match[1] : '';
@@ -44,7 +46,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'Cookie': cookies,
+        'Cookie': allCookies,
         'X-Requested-With': 'XMLHttpRequest',
         'X-MicrosoftAjax': 'Delta=true',
       },
@@ -64,17 +66,15 @@ export default async function handler(req, res) {
 
     const text = await searchRes.text();
 
-    // Step 4: Estrai spedizioni
+    // Step 4: Estrai
     const spedizioni = [];
-    const rowRegex = /<tr[^>]*class="[^"]*dxgvDataRow[^"]*"[^>]*>([\s\S]*?)<\/tr>/gi;
-    const rows = text.match(rowRegex);
+    const rows = text.match(/<tr[^>]*class="[^"]*dxgvDataRow[^"]*"[^>]*>([\s\S]*?)<\/tr>/gi);
 
     if (rows) {
       for (const row of rows) {
         const tds = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
         if (tds && tds.length >= 13) {
           const clean = (i) => tds[i] ? tds[i].replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, '').trim() : '';
-
           spedizioni.push({
             dataPartenza: clean(2),
             spedizione: clean(3),
@@ -97,8 +97,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         spedizioni: [],
-        totale: 0,
-        htmlSample: text.indexOf('<tr') >= 0 ? text.substring(text.indexOf('<tr'), text.indexOf('<tr') + 500) : text.substring(0, 500),
+        htmlSample: text.substring(0, 600),
       });
     }
 
