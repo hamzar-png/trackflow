@@ -6,7 +6,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Credenziali mancanti' });
     }
 
-    // Step 1: Login
+    // Step 1: Login e segui il redirect
     const loginResponse = await fetch('https://weblabeling.gls-italy.com/Home/Login', {
       method: 'POST',
       headers: {
@@ -17,57 +17,32 @@ export default async function handler(req, res) {
         Cliente: codiceCliente,
         Password: password,
       }),
-      redirect: 'manual',
+      redirect: 'follow', // Segui il redirect!
     });
 
-    const cookies = loginResponse.headers.get('set-cookie') || '';
+    const html = await loginResponse.text();
+    const finalUrl = loginResponse.url;
 
-    if (!cookies) {
-      return res.status(500).json({ error: 'Login fallito.' });
-    }
-
-    // Step 2: Prova diversi URL
-    const urls = [
-      '/Spedizioni',
-      '/Spedizioni/Lista',
-      '/Spedizioni/Elenco',
-      '/ListaSpedizioni',
-      '/Home/Spedizioni',
-      '/Home',
-      '/',
-    ];
-
-    let html = '';
-    let foundUrl = '';
-
-    for (const url of urls) {
-      const response = await fetch('https://weblabeling.gls-italy.com' + url, {
-        method: 'GET',
-        headers: {
-          'Cookie': cookies,
-          'Accept': 'text/html',
-        },
-        redirect: 'manual',
+    if (html.includes('Login') || html.length < 500) {
+      return res.status(500).json({ 
+        error: 'Login fallito o pagina vuota.',
+        url: finalUrl,
+        length: html.length 
       });
-
-      const text = await response.text();
-
-      // Controlla se non è un 404
-      if (response.status === 200 && !text.includes('404') && text.length > 500) {
-        html = text;
-        foundUrl = url;
-        break;
-      }
     }
 
-    if (!html) {
-      return res.status(500).json({ error: 'Nessuna pagina spedizioni trovata. Prova URL diversi.' });
-    }
+    // Cerca link nel menu
+    const links = html.match(/href="([^"]*)"[^>]*>([^<]*)</gi) || [];
+    const menuLinks = links
+      .map(l => l.match(/href="([^"]*)"/)?.[1])
+      .filter(l => l && (l.toLowerCase().includes('sped') || l.toLowerCase().includes('list')));
 
     return res.status(200).json({
       success: true,
-      message: 'Pagina trovata: ' + foundUrl,
-      htmlPreview: html.substring(0, 1500),
+      message: 'Login OK. URL finale: ' + finalUrl,
+      length: html.length,
+      menuLinks: menuLinks || [],
+      htmlPreview: html.substring(0, 2000),
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
