@@ -173,56 +173,68 @@ function App() {
     }
   };
 
-const importaDaGLS = async () => {
-  try {
-    const response = await fetch('/api/gls-import', {
-      method: 'POST',
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      alert('Errore server: ' + (data.error || 'Sconosciuto') + '\nStatus: ' + (data.status || 'N/D') + '\n' + (data.details || ''));
-      return;
-    }
-
-    if (data.error) {
-      alert('Errore: ' + data.error);
-      return;
-    }
-
-    if (data.tuListResponse && data.tuListResponse.tuList) {
+  const importaDaGLS = async () => {
+    try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      for (const item of data.tuListResponse.tuList) {
-        const nuovaSpedizione = {
-          tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-          cliente: item.consignee?.name || 'Da assegnare',
-          corriere: 'GLS',
-          tracking: item.tuNo || item.referenceNo || '',
-          stato: item.status || 'In transito',
-          data: new Date().toLocaleDateString('it-IT'),
-          tipo: 'tracking',
-          ddt: '',
-          partenza: '',
-          destinazione: item.consignee?.city || '',
-          note: '',
-          user_id: user.id,
-        };
+      const { data: imp } = await supabase
+        .from('impostazioni')
+        .select('gls_username, gls_password')
+        .eq('user_id', user.id)
+        .single();
 
-        await supabase.from('spedizioni').insert([nuovaSpedizione]);
+      if (!imp || !imp.gls_username || !imp.gls_password) {
+        alert('Inserisci prima le credenziali GLS nelle impostazioni (⚙️)');
+        return;
       }
 
-      caricaSpedizioniMittente(user.id);
-      alert('Importazione completata!');
-    } else {
-      alert('Nessuna spedizione trovata. Dati ricevuti: ' + JSON.stringify(data).substring(0, 200));
+      const response = await fetch('/api/gls-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: imp.gls_username,
+          password: imp.gls_password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        alert('Errore: ' + (data.error || 'Sconosciuto') + '\n' + (data.details || ''));
+        return;
+      }
+
+      if (data.tuListResponse && data.tuListResponse.tuList) {
+        for (const item of data.tuListResponse.tuList) {
+          const nuovaSpedizione = {
+            tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
+            cliente: item.consignee?.name || 'Da assegnare',
+            corriere: 'GLS',
+            tracking: item.tuNo || item.referenceNo || '',
+            stato: item.status || 'In transito',
+            data: new Date().toLocaleDateString('it-IT'),
+            tipo: 'tracking',
+            ddt: '',
+            partenza: '',
+            destinazione: item.consignee?.city || '',
+            note: '',
+            user_id: user.id,
+          };
+
+          await supabase.from('spedizioni').insert([nuovaSpedizione]);
+        }
+
+        caricaSpedizioniMittente(user.id);
+        alert('Importazione completata!');
+      } else {
+        alert('Nessuna spedizione trovata. Risposta: ' + JSON.stringify(data).substring(0, 200));
+      }
+    } catch (error) {
+      console.error('Errore import GLS:', error);
+      alert('Errore: ' + error.message);
     }
-  } catch (error) {
-    console.error('Errore import GLS:', error);
-    alert('Errore durante l\'importazione: ' + error.message);
-  }
-};
+  };
 
   const eliminaSpedizione = async (trackingId) => {
     await supabase.from('spedizioni').delete().eq('tracking_id', trackingId);
@@ -268,7 +280,7 @@ const importaDaGLS = async () => {
         }
       />
       <Route
-        path="/dashboard" onImportaGLS={ruolo === 'mittente' ? importaDaGLS : null}
+        path="/dashboard"
         element={
           isLoggedIn ? (
             <Dashboard
@@ -279,7 +291,6 @@ const importaDaGLS = async () => {
               onEliminaSpedizione={ruolo === 'mittente' ? eliminaSpedizione : null}
               onImportaGLS={ruolo === 'mittente' ? importaDaGLS : null}
               ruolo={ruolo}
-          
             />
           ) : (
             <Navigate to="/" />
