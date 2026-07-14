@@ -35,31 +35,54 @@ function Impostazioni({ onClose }) {
     setLoading(false);
   };
 
-const handleSalva = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    alert('Utente non trovato');
-    return;
-  }
+  const handleSalva = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert('Utente non trovato');
+      return;
+    }
 
-  const { error } = await supabase
-    .from('impostazioni')
-    .upsert({
-      user_id: user.id,
-      logo_azienda: logoAzienda,
-      logo_sfondo: logoSfondo,
-      gls_username: glsCodiceCliente,
-      gls_password: glsPassword,
-      gls_sede: glsSede,
-    });
+    const { data: esistente } = await supabase
+      .from('impostazioni')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
 
-  if (error) {
-    alert('Errore salvataggio: ' + error.message);
-  } else {
-    setSalvato(true);
-    setTimeout(() => setSalvato(false), 2000);
-  }
-};
+    let error;
+
+    if (esistente) {
+      const { error: updateError } = await supabase
+        .from('impostazioni')
+        .update({
+          logo_azienda: logoAzienda,
+          logo_sfondo: logoSfondo,
+          gls_username: glsCodiceCliente,
+          gls_password: glsPassword,
+          gls_sede: glsSede,
+        })
+        .eq('user_id', user.id);
+      error = updateError;
+    } else {
+      const { error: insertError } = await supabase
+        .from('impostazioni')
+        .insert({
+          user_id: user.id,
+          logo_azienda: logoAzienda,
+          logo_sfondo: logoSfondo,
+          gls_username: glsCodiceCliente,
+          gls_password: glsPassword,
+          gls_sede: glsSede,
+        });
+      error = insertError;
+    }
+
+    if (error) {
+      alert('Errore salvataggio: ' + error.message);
+    } else {
+      setSalvato(true);
+      setTimeout(() => setSalvato(false), 2000);
+    }
+  };
 
   if (loading) return <div className="imp-overlay"><p>Caricamento...</p></div>;
 
@@ -72,7 +95,6 @@ const handleSalva = async () => {
         </div>
 
         <div className="imp-body">
-          {/* Sezione GLS WebLabeling */}
           <div className="imp-section">
             <h3>📦 Account GLS WebLabeling</h3>
             <p className="imp-desc">Inserisci le credenziali del portale WebLabeling per l'import automatico.</p>
@@ -92,7 +114,6 @@ const handleSalva = async () => {
             </div>
           </div>
 
-          {/* Sezione Branding */}
           <div className="imp-section">
             <h3>🎨 Branding</h3>
             <p className="imp-desc">Personalizza TrackFlow con il tuo logo.</p>
