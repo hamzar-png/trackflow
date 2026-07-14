@@ -6,37 +6,63 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Credenziali mancanti' });
     }
 
-    // Step 1: Login con redirect follow per ottenere i cookie
-    const loginRes = await fetch('https://weblabeling.gls-italy.com/Home/Login', {
+    // Step 1: Login e segui i redirect
+    let currentUrl = 'https://weblabeling.gls-italy.com/Home/Login';
+    let cookies = '';
+    let html = '';
+
+    // Primo POST login
+    const loginRes = await fetch(currentUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ Sede: sede.toUpperCase(), Cliente: codiceCliente, Password: password }),
-      redirect: 'follow',
+      redirect: 'manual',
     });
 
-    // Raccogli tutti i cookie dalla risposta
-    const rawCookies = loginRes.headers.getSetCookie?.() || [];
-    const allCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+    // Raccogli cookie
+    const setCookie = loginRes.headers.get('set-cookie') || '';
+    cookies = setCookie.split(',').map(c => c.split(';')[0].trim()).join('; ');
 
-    if (!allCookies || allCookies.length < 10) {
-      return res.status(500).json({ error: 'Login fallito. Cookie non ricevuti.' });
+    if (!cookies) {
+      return res.status(500).json({ error: 'Login fallito - nessun cookie' });
     }
 
-    // Step 2: Visita la pagina TrackTrace
+    // Segui il redirect a Default.aspx
+    const location = loginRes.headers.get('location') || '';
+    if (location) {
+      const redirectRes = await fetch('https://weblabeling.gls-italy.com' + (location.startsWith('/') ? location : '/' + location), {
+        headers: { 'Cookie': cookies },
+        redirect: 'manual',
+      });
+      
+      const moreCookies = redirectRes.headers.get('set-cookie') || '';
+      if (moreCookies) {
+        cookies += '; ' + moreCookies.split(',').map(c => c.split(';')[0].trim()).join('; ');
+      }
+
+      const loc2 = redirectRes.headers.get('location') || '';
+      if (loc2) {
+        await fetch('https://weblabeling.gls-italy.com' + (loc2.startsWith('/') ? loc2 : '/' + loc2), {
+          headers: { 'Cookie': cookies },
+        });
+      }
+    }
+
+    // Step 2: Ora visita TrackTrace
     const pageRes = await fetch('https://weblabeling.gls-italy.com/Secure_Page/TrackTrace.aspx', {
-      headers: { 'Cookie': allCookies },
+      headers: { 'Cookie': cookies },
     });
-    const pageHtml = await pageRes.text();
+    html = await pageRes.text();
 
     // Estrai VIEWSTATE
     const getHidden = (name) => {
-      const match = pageHtml.match(new RegExp(`id="${name}"\\s+value="([^"]*)"`));
+      const match = html.match(new RegExp(`id="${name}"\\s+value="([^"]*)"`));
       return match ? match[1] : '';
     };
 
     const today = new Date();
     const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 30);
+    weekAgo.setDate(weekAgo.getDate() - 14);
     const dd = (d) => String(d).padStart(2, '0');
     const dataDa = `${dd(weekAgo.getDate())}/${dd(weekAgo.getMonth() + 1)}/${weekAgo.getFullYear()}`;
     const dataA = `${dd(today.getDate())}/${dd(today.getMonth() + 1)}/${today.getFullYear()}`;
@@ -46,7 +72,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'Cookie': allCookies,
+        'Cookie': cookies,
         'X-Requested-With': 'XMLHttpRequest',
         'X-MicrosoftAjax': 'Delta=true',
       },
@@ -79,10 +105,8 @@ export default async function handler(req, res) {
             dataPartenza: clean(2),
             spedizione: clean(3),
             ddt: clean(4),
-            contratto: clean(5),
             destinatario: clean(6),
             esito: clean(7),
-            dataOra: clean(8),
             localita: clean(9),
             indirizzo: clean(10),
             provincia: clean(11),
@@ -94,11 +118,7 @@ export default async function handler(req, res) {
     }
 
     if (spedizioni.length === 0) {
-      return res.status(200).json({
-        success: true,
-        spedizioni: [],
-        htmlSample: text.substring(0, 600),
-      });
+      return res.status(200).json({ success: true, spedizioni: [], sample: text.substring(0, 400) });
     }
 
     return res.status(200).json({ success: true, spedizioni, totale: spedizioni.length });
