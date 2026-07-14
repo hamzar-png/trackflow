@@ -178,25 +178,26 @@ function App() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: imp } = await supabase
-        .from('impostazioni')
-        .select('gls_username, gls_password')
-        .eq('user_id', user.id)
-        .single();
+     const { data: imp } = await supabase
+  .from('impostazioni')
+  .select('gls_username, gls_password, gls_sede')
+  .eq('user_id', user.id)
+  .single();
 
-      if (!imp || !imp.gls_username || !imp.gls_password) {
-        alert('Inserisci prima le credenziali GLS nelle impostazioni (⚙️)');
-        return;
-      }
+if (!imp || !imp.gls_sede || !imp.gls_username || !imp.gls_password) {
+  alert('Inserisci tutte le credenziali GLS nelle impostazioni (⚙️)');
+  return;
+}
 
       const response = await fetch('/api/gls-import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: imp.gls_username,
-          password: imp.gls_password,
-        }),
-      });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    sede: imp.gls_sede,
+    codiceCliente: imp.gls_username,
+    password: imp.gls_password,
+  }),
+});
 
       const data = await response.json();
 

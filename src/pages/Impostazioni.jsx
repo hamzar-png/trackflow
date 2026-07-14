@@ -5,7 +5,8 @@ import './Impostazioni.css';
 function Impostazioni({ onClose }) {
   const [logoAzienda, setLogoAzienda] = useState('');
   const [logoSfondo, setLogoSfondo] = useState('');
-  const [glsUsername, setGlsUsername] = useState('');
+  const [glsSede, setGlsSede] = useState('');
+  const [glsCodiceCliente, setGlsCodiceCliente] = useState('');
   const [glsPassword, setGlsPassword] = useState('');
   const [salvato, setSalvato] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -27,7 +28,8 @@ function Impostazioni({ onClose }) {
     if (data) {
       setLogoAzienda(data.logo_azienda || '');
       setLogoSfondo(data.logo_sfondo || '');
-      setGlsUsername(data.gls_username || '');
+      setGlsSede(data.gls_sede || '');
+      setGlsCodiceCliente(data.gls_username || '');
       setGlsPassword(data.gls_password || '');
     }
     setLoading(false);
@@ -43,8 +45,9 @@ function Impostazioni({ onClose }) {
         user_id: user.id,
         logo_azienda: logoAzienda,
         logo_sfondo: logoSfondo,
-        gls_username: glsUsername,
+        gls_username: glsCodiceCliente,
         gls_password: glsPassword,
+        gls_sede: glsSede,
       });
 
     if (!error) {
@@ -64,18 +67,22 @@ function Impostazioni({ onClose }) {
         </div>
 
         <div className="imp-body">
-          {/* Sezione Corriere */}
+          {/* Sezione GLS WebLabeling */}
           <div className="imp-section">
-            <h3>📦 Account GLS</h3>
-            <p className="imp-desc">Inserisci le credenziali ShipIT per l'import automatico.</p>
+            <h3>📦 Account GLS WebLabeling</h3>
+            <p className="imp-desc">Inserisci le credenziali del portale WebLabeling per l'import automatico.</p>
             <div className="imp-row">
               <div className="imp-group">
-                <label>Username / Client ID</label>
-                <input type="text" value={glsUsername} onChange={(e) => setGlsUsername(e.target.value)} placeholder="username@azienda.it" />
+                <label>Sigla sede</label>
+                <input type="text" value={glsSede} onChange={(e) => setGlsSede(e.target.value)} placeholder="es. AK" />
               </div>
               <div className="imp-group">
-                <label>Password / Secret</label>
-                <input type="password" value={glsPassword} onChange={(e) => setGlsPassword(e.target.value)} placeholder="••••••••" />
+                <label>Codice cliente</label>
+                <input type="text" value={glsCodiceCliente} onChange={(e) => setGlsCodiceCliente(e.target.value)} placeholder="es. 4859" />
+              </div>
+              <div className="imp-group">
+                <label>Password</label>
+                <input type="password" value={glsPassword} onChange={(e) => setGlsPassword(e.target.value)} placeholder="Password WebLabeling" />
               </div>
             </div>
           </div>
