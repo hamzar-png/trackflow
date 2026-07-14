@@ -200,37 +200,38 @@ if (!imp || !imp.gls_sede || !imp.gls_username || !imp.gls_password) {
 });
 
       const data = await response.json();
+if (!response.ok || data.error) {
+  alert('Errore: ' + (data.error || 'Sconosciuto'));
+  return;
+}
 
-      if (!response.ok || data.error) {
-        alert('Errore: ' + (data.error || 'Sconosciuto') + '\n' + (data.details || ''));
-        return;
-      }
+if (data.spedizioni && data.spedizioni.length > 0) {
+  const { data: { user } } = await supabase.auth.getUser();
 
-      if (data.tuListResponse && data.tuListResponse.tuList) {
-        for (const item of data.tuListResponse.tuList) {
-          const nuovaSpedizione = {
-            tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-            cliente: item.consignee?.name || 'Da assegnare',
-            corriere: 'GLS',
-            tracking: item.tuNo || item.referenceNo || '',
-            stato: item.status || 'In transito',
-            data: new Date().toLocaleDateString('it-IT'),
-            tipo: 'tracking',
-            ddt: '',
-            partenza: '',
-            destinazione: item.consignee?.city || '',
-            note: '',
-            user_id: user.id,
-          };
+  for (const item of data.spedizioni) {
+    const nuovaSpedizione = {
+      tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
+      cliente: item.cliente,
+      corriere: 'GLS',
+      tracking: item.tracking,
+      stato: item.stato || 'In transito',
+      data: item.data || new Date().toLocaleDateString('it-IT'),
+      tipo: 'tracking',
+      ddt: '',
+      partenza: '',
+      destinazione: '',
+      note: '',
+      user_id: user.id,
+    };
 
-          await supabase.from('spedizioni').insert([nuovaSpedizione]);
-        }
+    await supabase.from('spedizioni').insert([nuovaSpedizione]);
+  }
 
-        caricaSpedizioniMittente(user.id);
-        alert('Importazione completata!');
-      } else {
-        alert('Nessuna spedizione trovata. Risposta: ' + JSON.stringify(data).substring(0, 200));
-      }
+  caricaSpedizioniMittente(user.id);
+  alert('Importazione completata! ' + data.spedizioni.length + ' spedizioni importate.');
+} else {
+  alert('Login riuscito ma nessuna spedizione trovata. Dati: ' + JSON.stringify(data).substring(0, 300));
+}
     } catch (error) {
       console.error('Errore import GLS:', error);
       alert('Errore: ' + error.message);
