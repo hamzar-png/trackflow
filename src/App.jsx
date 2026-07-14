@@ -230,7 +230,7 @@ if (data.spedizioni && data.spedizioni.length > 0) {
   caricaSpedizioniMittente(user.id);
   alert('Importazione completata! ' + data.spedizioni.length + ' spedizioni importate.');
 } else {
-  alert('Login riuscito ma nessuna spedizione trovata. Dati: ' + JSON.stringify(data).substring(0, 300));
+alert('HTML ricevuto (primi 2000 caratteri):\n\n' + (data.htmlPreview || '').substring(0, 2000));
 }
     } catch (error) {
       console.error('Errore import GLS:', error);
