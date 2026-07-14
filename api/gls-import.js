@@ -23,64 +23,51 @@ export default async function handler(req, res) {
     const cookies = loginResponse.headers.get('set-cookie') || '';
 
     if (!cookies) {
-      return res.status(500).json({ error: 'Login fallito. Verifica le credenziali.' });
+      return res.status(500).json({ error: 'Login fallito.' });
     }
 
-    // Step 2: Recupera lista spedizioni
-    const spedizioniResponse = await fetch('https://weblabeling.gls-italy.com/Spedizioni/Lista', {
-      method: 'GET',
-      headers: {
-        'Cookie': cookies,
-        'Accept': 'text/html',
-      },
-    });
+    // Step 2: Prova diversi URL
+    const urls = [
+      '/Spedizioni',
+      '/Spedizioni/Lista',
+      '/Spedizioni/Elenco',
+      '/ListaSpedizioni',
+      '/Home/Spedizioni',
+      '/Home',
+      '/',
+    ];
 
-    const html = await spedizioniResponse.text();
+    let html = '';
+    let foundUrl = '';
 
-    if (html.includes('Login') || html.includes('login')) {
-      return res.status(500).json({ error: 'Sessione scaduta.' });
-    }
+    for (const url of urls) {
+      const response = await fetch('https://weblabeling.gls-italy.com' + url, {
+        method: 'GET',
+        headers: {
+          'Cookie': cookies,
+          'Accept': 'text/html',
+        },
+        redirect: 'manual',
+      });
 
-    // Step 3: Estrai i dati dall'HTML (parsing semplice)
-    const spedizioni = [];
-    
-    // Cerca righe della tabella
-    const tableMatch = html.match(/<table[^>]*>([\s\S]*?)<\/table>/gi);
-    
-    if (tableMatch) {
-      for (const table of tableMatch) {
-        const rows = table.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
-        if (rows) {
-          for (let i = 1; i < rows.length; i++) { // Salta header
-            const cells = rows[i].match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
-            if (cells && cells.length >= 3) {
-              const cleanCell = (cell) => cell.replace(/<[^>]*>/g, '').trim();
-              
-              spedizioni.push({
-                tracking: cleanCell(cells[0]) || 'N/D',
-                cliente: cleanCell(cells[1]) || 'Da assegnare',
-                stato: cleanCell(cells[2]) || 'In transito',
-                data: new Date().toLocaleDateString('it-IT'),
-              });
-            }
-          }
-        }
+      const text = await response.text();
+
+      // Controlla se non è un 404
+      if (response.status === 200 && !text.includes('404') && text.length > 500) {
+        html = text;
+        foundUrl = url;
+        break;
       }
     }
 
-    // Se non trova nulla, restituisci tutto l'HTML per debug
-    if (spedizioni.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: 'Login OK ma nessuna spedizione trovata nella tabella.',
-        htmlPreview: html.substring(0, 1000),
-      });
+    if (!html) {
+      return res.status(500).json({ error: 'Nessuna pagina spedizioni trovata. Prova URL diversi.' });
     }
 
     return res.status(200).json({
       success: true,
-      spedizioni: spedizioni,
-      totale: spedizioni.length,
+      message: 'Pagina trovata: ' + foundUrl,
+      htmlPreview: html.substring(0, 1500),
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
