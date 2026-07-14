@@ -35,26 +35,31 @@ function Impostazioni({ onClose }) {
     setLoading(false);
   };
 
-  const handleSalva = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+const handleSalva = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert('Utente non trovato');
+    return;
+  }
 
-    const { error } = await supabase
-      .from('impostazioni')
-      .upsert({
-        user_id: user.id,
-        logo_azienda: logoAzienda,
-        logo_sfondo: logoSfondo,
-        gls_username: glsCodiceCliente,
-        gls_password: glsPassword,
-        gls_sede: glsSede,
-      });
+  const { error } = await supabase
+    .from('impostazioni')
+    .upsert({
+      user_id: user.id,
+      logo_azienda: logoAzienda,
+      logo_sfondo: logoSfondo,
+      gls_username: glsCodiceCliente,
+      gls_password: glsPassword,
+      gls_sede: glsSede,
+    });
 
-    if (!error) {
-      setSalvato(true);
-      setTimeout(() => setSalvato(false), 2000);
-    }
-  };
+  if (error) {
+    alert('Errore salvataggio: ' + error.message);
+  } else {
+    setSalvato(true);
+    setTimeout(() => setSalvato(false), 2000);
+  }
+};
 
   if (loading) return <div className="imp-overlay"><p>Caricamento...</p></div>;
 
