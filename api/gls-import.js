@@ -6,25 +6,33 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Credenziali mancanti' });
     }
 
-    // Login e ottieni cookie
+    // Step 1: Login e segui redirect per ottenere il cookie .ASPXFORMSAUTH
     const loginRes = await fetch('https://weblabeling.gls-italy.com/Home/Login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ Sede: sede.toUpperCase(), Cliente: codiceCliente, Password: password }),
-      redirect: 'manual',
+      redirect: 'follow',
     });
 
-    const setCookie = loginRes.headers.get('set-cookie') || '';
-    const sessionId = setCookie.match(/ASP\.NET_SessionId=([^;]+)/)?.[1] || '';
-    const formsAuth = setCookie.match(/\.ASPXFORMSAUTH=([^;]+)/)?.[1] || '';
+    // Estrai TUTTI i cookie usando getSetCookie (Node 18+ su Vercel)
+    const rawCookies = loginRes.headers.getSetCookie?.() || loginRes.headers.raw?.()?.['set-cookie'] || [];
+    const allCookies = (Array.isArray(rawCookies) ? rawCookies : [rawCookies]).map(c => c.split(';')[0]).join('; ');
 
-    if (!sessionId || !formsAuth) {
-      return res.status(500).json({ error: 'Login fallito. Cookie non trovati.', sessionId: !!sessionId, formsAuth: !!formsAuth });
+    // Verifica se abbiamo il cookie auth
+    const hasSessionId = allCookies.includes('ASP.NET_SessionId');
+    const hasFormsAuth = allCookies.includes('.ASPXFORMSAUTH');
+
+    if (!hasSessionId || !hasFormsAuth) {
+      return res.status(500).json({ 
+        error: 'Login fallito', 
+        hasSessionId, 
+        hasFormsAuth, 
+        cookiesPreview: allCookies.substring(0, 200),
+        url: loginRes.url 
+      });
     }
 
-    const cookies = `ASP.NET_SessionId=${sessionId}; .ASPXFORMSAUTH=${formsAuth}`;
-
-    // Richiesta diretta con parametri esatti
+    // Step 2: Cerca spedizioni
     const today = new Date();
     const weekAgo = new Date(today);
     weekAgo.setDate(weekAgo.getDate() - 14);
@@ -36,7 +44,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'Cookie': cookies,
+        'Cookie': allCookies,
         'X-Requested-With': 'XMLHttpRequest',
         'X-MicrosoftAjax': 'Delta=true',
       },
