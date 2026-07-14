@@ -86,9 +86,7 @@ function App() {
   const handleLogin = async (email, password, tipo) => {
     if (tipo === 'mittente') {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        return { success: false, message: error.message };
-      }
+      if (error) return { success: false, message: error.message };
       if (data.user) {
         setRuolo('mittente');
         setAzienda(data.user.user_metadata?.nome_azienda || email.split('@')[0]);
@@ -98,25 +96,12 @@ function App() {
       return { success: true };
     } else {
       const { data: dest, error } = await supabase
-        .from('destinatari')
-        .select('*')
-        .eq('email', email)
-        .single();
+        .from('destinatari').select('*').eq('email', email).single();
 
-      if (error || !dest) {
-        return { success: false, message: 'Credenziali non valide.' };
-      }
+      if (error || !dest) return { success: false, message: 'Credenziali non valide.' };
+      if (dest.password_hash !== password) return { success: false, message: 'Password non valida.' };
 
-      if (dest.password_hash !== password) {
-        return { success: false, message: 'Password non valida.' };
-      }
-
-      localStorage.setItem('destinatario', JSON.stringify({
-        email: dest.email,
-        nome_azienda: dest.nome_azienda,
-        id: dest.id,
-      }));
-
+      localStorage.setItem('destinatario', JSON.stringify({ email: dest.email, nome_azienda: dest.nome_azienda, id: dest.id }));
       setRuolo('destinatario');
       setAzienda(dest.nome_azienda);
       setIsLoggedIn(true);
@@ -126,9 +111,7 @@ function App() {
   };
 
   const handleLogout = async () => {
-    if (ruolo === 'destinatario') {
-      localStorage.removeItem('destinatario');
-    }
+    if (ruolo === 'destinatario') localStorage.removeItem('destinatario');
     await supabase.auth.signOut();
     setIsLoggedIn(false);
     setRuolo('');
@@ -156,21 +139,10 @@ function App() {
       destinatario_id: nuovaSpedizione.destinatario_id || null,
     };
 
-    const { data, error } = await supabase
-      .from('spedizioni')
-      .insert([spedizioneCompleta])
-      .select()
-      .single();
+    const { data, error } = await supabase.from('spedizioni').insert([spedizioneCompleta]).select().single();
 
-    if (error) {
-      console.error('Errore inserimento:', error);
-      alert('Errore durante il salvataggio: ' + error.message);
-      return;
-    }
-
-    if (data) {
-      setSpedizioni([data, ...spedizioni]);
-    }
+    if (error) { alert('Errore: ' + error.message); return; }
+    if (data) setSpedizioni([data, ...spedizioni]);
   };
 
   const importaDaGLS = async () => {
@@ -178,62 +150,54 @@ function App() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-     const { data: imp } = await supabase
-  .from('impostazioni')
-  .select('gls_username, gls_password, gls_sede')
-  .eq('user_id', user.id)
-  .single();
+      const { data: imp } = await supabase
+        .from('impostazioni')
+        .select('gls_username, gls_password, gls_sede')
+        .eq('user_id', user.id)
+        .single();
 
-if (!imp || !imp.gls_sede || !imp.gls_username || !imp.gls_password) {
-  alert('Inserisci tutte le credenziali GLS nelle impostazioni (⚙️)');
-  return;
-}
+      if (!imp || !imp.gls_sede || !imp.gls_username || !imp.gls_password) {
+        alert('Inserisci tutte le credenziali GLS nelle impostazioni (⚙️)');
+        return;
+      }
 
       const response = await fetch('/api/gls-import', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    sede: imp.gls_sede,
-    codiceCliente: imp.gls_username,
-    password: imp.gls_password,
-  }),
-});
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sede: imp.gls_sede, codiceCliente: imp.gls_username, password: imp.gls_password }),
+      });
 
       const data = await response.json();
-if (!response.ok || data.error) {
-  alert('Errore: ' + (data.error || 'Sconosciuto'));
-  return;
-}
 
-if (data.spedizioni && data.spedizioni.length > 0) {
-  const { data: { user } } = await supabase.auth.getUser();
+      if (!response.ok || data.error) {
+        alert('Errore: ' + (data.error || 'Sconosciuto'));
+        return;
+      }
 
-  for (const item of data.spedizioni) {
-    const nuovaSpedizione = {
-      tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-      cliente: item.cliente,
-      corriere: 'GLS',
-      tracking: item.tracking,
-      stato: item.stato || 'In transito',
-      data: item.data || new Date().toLocaleDateString('it-IT'),
-      tipo: 'tracking',
-      ddt: '',
-      partenza: '',
-      destinazione: '',
-      note: '',
-      user_id: user.id,
-    };
+      if (data.spedizioni && data.spedizioni.length > 0) {
+        for (const item of data.spedizioni) {
+          await supabase.from('spedizioni').insert([{
+            tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
+            cliente: item.destinatario,
+            corriere: 'GLS',
+            tracking: item.spedizione,
+            stato: item.esito || 'In transito',
+            data: item.dataPartenza || new Date().toLocaleDateString('it-IT'),
+            tipo: 'tracking',
+            ddt: item.ddt || '',
+            partenza: '',
+            destinazione: item.localita || '',
+            note: '',
+            user_id: user.id,
+          }]);
+        }
 
-    await supabase.from('spedizioni').insert([nuovaSpedizione]);
-  }
-
-  caricaSpedizioniMittente(user.id);
-  alert('Importazione completata! ' + data.spedizioni.length + ' spedizioni importate.');
-} else {
-alert('HTML ricevuto (primi 2000 caratteri):\n\n' + (data.htmlPreview || '').substring(0, 2000));
-}
+        caricaSpedizioniMittente(user.id);
+        alert('Importazione completata! ' + data.spedizioni.length + ' spedizioni importate.');
+      } else {
+        alert('Nessuna spedizione trovata. ' + JSON.stringify(data).substring(0, 300));
+      }
     } catch (error) {
-      console.error('Errore import GLS:', error);
       alert('Errore: ' + error.message);
     }
   };
@@ -244,76 +208,19 @@ alert('HTML ricevuto (primi 2000 caratteri):\n\n' + (data.htmlPreview || '').sub
   };
 
   const modificaSpedizione = async (trackingId, datiAggiornati) => {
-    const { data } = await supabase
-      .from('spedizioni')
-      .update(datiAggiornati)
-      .eq('tracking_id', trackingId)
-      .select()
-      .single();
-
-    if (data) {
-      setSpedizioni(spedizioni.map(s => s.tracking_id === trackingId ? data : s));
-    }
+    const { data } = await supabase.from('spedizioni').update(datiAggiornati).eq('tracking_id', trackingId).select().single();
+    if (data) setSpedizioni(spedizioni.map(s => s.tracking_id === trackingId ? data : s));
   };
 
-  if (loading) {
-    return (
-      <div style={{
-        background: '#0f172a', minHeight: '100vh', display: 'flex',
-        justifyContent: 'center', alignItems: 'center', color: '#94a3b8', fontSize: '1.2rem',
-      }}>
-        Caricamento...
-      </div>
-    );
-  }
+  if (loading) return <div style={{ background: '#0f172a', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#94a3b8' }}>Caricamento...</div>;
 
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/register" element={<Registrazione />} />
-      <Route
-        path="/login/:tipo"
-        element={
-          isLoggedIn ? (
-            <Navigate to="/dashboard" />
-          ) : (
-            <Login onLogin={handleLogin} />
-          )
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          isLoggedIn ? (
-            <Dashboard
-              azienda={azienda}
-              onLogout={handleLogout}
-              spedizioni={spedizioni}
-              onAggiungiSpedizione={ruolo === 'mittente' ? aggiungiSpedizione : null}
-              onEliminaSpedizione={ruolo === 'mittente' ? eliminaSpedizione : null}
-              onImportaGLS={ruolo === 'mittente' ? importaDaGLS : null}
-              ruolo={ruolo}
-            />
-          ) : (
-            <Navigate to="/" />
-          )
-        }
-      />
-      <Route
-        path="/dettaglio/:trackingId"
-        element={
-          isLoggedIn ? (
-            <DettaglioSpedizione
-              spedizioni={spedizioni}
-              onElimina={ruolo === 'mittente' ? eliminaSpedizione : null}
-              onModifica={ruolo === 'mittente' ? modificaSpedizione : null}
-              ruolo={ruolo}
-            />
-          ) : (
-            <Navigate to="/" />
-          )
-        }
-      />
+      <Route path="/login/:tipo" element={isLoggedIn ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} />
+      <Route path="/dashboard" element={isLoggedIn ? <Dashboard azienda={azienda} onLogout={handleLogout} spedizioni={spedizioni} onAggiungiSpedizione={ruolo === 'mittente' ? aggiungiSpedizione : null} onEliminaSpedizione={ruolo === 'mittente' ? eliminaSpedizione : null} onImportaGLS={ruolo === 'mittente' ? importaDaGLS : null} ruolo={ruolo} /> : <Navigate to="/" />} />
+      <Route path="/dettaglio/:trackingId" element={isLoggedIn ? <DettaglioSpedizione spedizioni={spedizioni} onElimina={ruolo === 'mittente' ? eliminaSpedizione : null} onModifica={ruolo === 'mittente' ? modificaSpedizione : null} ruolo={ruolo} /> : <Navigate to="/" />} />
     </Routes>
   );
 }
