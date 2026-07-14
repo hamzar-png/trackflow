@@ -170,3 +170,16 @@
 .importa-gls-btn:hover {
   background: #fbbf24;
 }
+.impostazioni-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.impostazioni-btn:hover {
+  background: #334155;
+}
