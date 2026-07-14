@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
     const cookies = allCookies.split(',').map(c => c.split(';')[0].trim()).join('; ');
 
-    // Step 2: Visita TrackTrace per ottenere VIEWSTATE
+    // Step 2: Visita TrackTrace
     const pageRes = await fetch('https://weblabeling.gls-italy.com/Secure_Page/TrackTrace.aspx', {
       headers: { 'Cookie': cookies },
     });
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     const dataDa = `${dd(weekAgo.getDate())}/${dd(weekAgo.getMonth() + 1)}/${weekAgo.getFullYear()}`;
     const dataA = `${dd(today.getDate())}/${dd(today.getMonth() + 1)}/${today.getFullYear()}`;
 
-    // Step 3: Cerca spedizioni
+    // Step 3: Cerca
     const searchRes = await fetch('https://weblabeling.gls-italy.com/Secure_Page/TrackTrace.aspx', {
       method: 'POST',
       headers: {
@@ -64,32 +64,42 @@ export default async function handler(req, res) {
 
     const text = await searchRes.text();
 
-    // Step 4: Estrai spedizioni dall'HTML
+    // Step 4: Estrai spedizioni
     const spedizioni = [];
-    const rows = text.match(/<tr[^>]*class="dxgvDataRow[^"]*"[^>]*>([\s\S]*?)<\/tr>/gi);
+    const rowRegex = /<tr[^>]*class="[^"]*dxgvDataRow[^"]*"[^>]*>([\s\S]*?)<\/tr>/gi;
+    const rows = text.match(rowRegex);
 
     if (rows) {
       for (const row of rows) {
-        const cells = row.match(/<td[^>]*class="[^"]*dxgv[^"]*"[^>]*>([\s\S]*?)<\/td>/gi);
-        if (cells && cells.length >= 12) {
-          const clean = (i) => cells[i] ? cells[i].replace(/<[^>]*>/g, '').trim() : '';
+        const tds = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+        if (tds && tds.length >= 13) {
+          const clean = (i) => tds[i] ? tds[i].replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, '').trim() : '';
 
           spedizioni.push({
-            dataPartenza: clean(1),
-            spedizione: clean(2),
-            ddt: clean(3),
-            contratto: clean(4),
-            destinatario: clean(5),
-            esito: clean(6),
-            dataOra: clean(7),
-            localita: clean(8),
-            indirizzo: clean(9),
-            provincia: clean(10),
-            colli: clean(11),
-            peso: clean(12),
+            dataPartenza: clean(2),
+            spedizione: clean(3),
+            ddt: clean(4),
+            contratto: clean(5),
+            destinatario: clean(6),
+            esito: clean(7),
+            dataOra: clean(8),
+            localita: clean(9),
+            indirizzo: clean(10),
+            provincia: clean(11),
+            colli: clean(12),
+            peso: clean(13),
           });
         }
       }
+    }
+
+    if (spedizioni.length === 0) {
+      return res.status(200).json({
+        success: true,
+        spedizioni: [],
+        totale: 0,
+        htmlSample: text.indexOf('<tr') >= 0 ? text.substring(text.indexOf('<tr'), text.indexOf('<tr') + 500) : text.substring(0, 500),
+      });
     }
 
     return res.status(200).json({ success: true, spedizioni, totale: spedizioni.length });
