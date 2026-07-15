@@ -13,32 +13,36 @@ export default async function handler(req, res) {
       redirect: 'manual',
     });
 
-    // Prendi TUTTI i cookie
+    const setCookieHeader = loginRes.headers.get('set-cookie') || '';
     const rawCookies = loginRes.headers.getSetCookie?.() || [];
-    const cookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+    
+    let cookies = '';
+    if (rawCookies.length > 0) {
+      cookies = rawCookies.map(c => c.split(';')[0].trim()).join('; ');
+    } else if (setCookieHeader) {
+      cookies = setCookieHeader.split(',').map(c => c.split(';')[0].trim()).join('; ');
+    }
 
-    // Verifica login
-    const location = loginRes.headers.get('location') || '';
-    if (!cookies.includes('.ASPXFORMSAUTH')) {
-      return res.status(500).json({ error: 'Login fallito', status: loginRes.status, location });
+    if (!cookies) {
+      return res.status(500).json({ 
+        error: 'Login fallito - nessun cookie', 
+        cookiePreview: setCookieHeader.substring(0, 100)
+      });
     }
 
     // Step 2: GET TrackTrace per VIEWSTATE
     const getRes = await fetch('https://weblabeling.gls-italy.com/Secure_Page/TrackTrace.aspx', {
       headers: { 'Cookie': cookies },
     });
-    // Aggiorna cookie se la pagina ne ha impostati di nuovi
+
     const newCookies = getRes.headers.getSetCookie?.() || [];
-    if (newCookies.length > 0) {
-      const updatedCookies = [...rawCookies, ...newCookies].map(c => c.split(';')[0]).join('; ');
-    }
     const finalCookies = newCookies.length > 0 
-      ? [...rawCookies, ...newCookies].map(c => c.split(';')[0]).join('; ')
+      ? [...(rawCookies.length > 0 ? rawCookies : setCookieHeader.split(',').map(c => c.split(';')[0].trim())), ...newCookies.map(c => c.split(';')[0].trim())]
+          .filter((v, i, a) => a.indexOf(v) === i).join('; ')
       : cookies;
 
     const html = await getRes.text();
 
-    // Estrai VIEWSTATE (cerca name="xxx" non id="xxx")
     const extract = (name) => {
       const m = html.match(new RegExp(`name="${name}"[^>]+value="([^"]*)"`, 'i'));
       return m ? m[1] : '';
@@ -51,7 +55,7 @@ export default async function handler(req, res) {
     const dataDa = `${dd(weekAgo.getDate())}/${dd(weekAgo.getMonth() + 1)}/${weekAgo.getFullYear()}`;
     const dataA = `${dd(today.getDate())}/${dd(today.getMonth() + 1)}/${today.getFullYear()}`;
 
-    // Step 3: POST ricerca (senza doppio encoding!)
+    // Step 3: POST ricerca
     const bodyParams = new URLSearchParams();
     bodyParams.append('ScriptManager1', 'UpdatePanel1|btnSearch');
     bodyParams.append('txtDataDa', dataDa);
@@ -77,15 +81,8 @@ export default async function handler(req, res) {
 
     const text = await searchRes.text();
 
-    // Debug: log dei primi 1000 caratteri
-    console.log('Response start:', text.substring(0, 500));
-    console.log('VIEWSTATE length:', extract('__VIEWSTATE').length);
-    console.log('Cookies auth:', finalCookies.includes('.ASPXFORMSAUTH'));
-
-    // Estrai spedizioni dal delta AJAX o dall'HTML
     const spedizioni = [];
-    const rowRegex = /<tr[^>]*class="[^"]*dxgvDataRow[^"]*"[^>]*>([\s\S]*?)<\/tr>/gi;
-    const rows = text.match(rowRegex);
+    const rows = text.match(/<tr[^>]*class="[^"]*dxgvDataRow[^"]*"[^>]*>([\s\S]*?)<\/tr>/gi);
 
     if (rows) {
       for (const row of rows) {
