@@ -1,61 +1,91 @@
 export default async function handler(req, res) {
   try {
     const { sede, codiceCliente, password } = req.body || {};
-
     if (!sede || !codiceCliente || !password) {
       return res.status(400).json({ error: 'Credenziali mancanti' });
     }
 
-    // Step 1: Login e segui redirect per ottenere il cookie .ASPXFORMSAUTH
+    // Step 1: Login
     const loginRes = await fetch('https://weblabeling.gls-italy.com/Home/Login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ Sede: sede.toUpperCase(), Cliente: codiceCliente, Password: password }),
-      redirect: 'follow',
+      redirect: 'manual',
     });
 
-    // Estrai TUTTI i cookie usando getSetCookie (Node 18+ su Vercel)
-    const rawCookies = loginRes.headers.getSetCookie?.() || loginRes.headers.raw?.()?.['set-cookie'] || [];
-    const allCookies = (Array.isArray(rawCookies) ? rawCookies : [rawCookies]).map(c => c.split(';')[0]).join('; ');
+    // Prendi TUTTI i cookie
+    const rawCookies = loginRes.headers.getSetCookie?.() || [];
+    const cookies = rawCookies.map(c => c.split(';')[0]).join('; ');
 
-    // Verifica se abbiamo il cookie auth
-    const hasSessionId = allCookies.includes('ASP.NET_SessionId');
-    const hasFormsAuth = allCookies.includes('.ASPXFORMSAUTH');
-
-    if (!hasSessionId || !hasFormsAuth) {
-      return res.status(500).json({ 
-        error: 'Login fallito', 
-        hasSessionId, 
-        hasFormsAuth, 
-        cookiesPreview: allCookies.substring(0, 200),
-        url: loginRes.url 
-      });
+    // Verifica login
+    const location = loginRes.headers.get('location') || '';
+    if (!cookies.includes('.ASPXFORMSAUTH')) {
+      return res.status(500).json({ error: 'Login fallito', status: loginRes.status, location });
     }
 
-    // Step 2: Cerca spedizioni
+    // Step 2: GET TrackTrace per VIEWSTATE
+    const getRes = await fetch('https://weblabeling.gls-italy.com/Secure_Page/TrackTrace.aspx', {
+      headers: { 'Cookie': cookies },
+    });
+    // Aggiorna cookie se la pagina ne ha impostati di nuovi
+    const newCookies = getRes.headers.getSetCookie?.() || [];
+    if (newCookies.length > 0) {
+      const updatedCookies = [...rawCookies, ...newCookies].map(c => c.split(';')[0]).join('; ');
+    }
+    const finalCookies = newCookies.length > 0 
+      ? [...rawCookies, ...newCookies].map(c => c.split(';')[0]).join('; ')
+      : cookies;
+
+    const html = await getRes.text();
+
+    // Estrai VIEWSTATE (cerca name="xxx" non id="xxx")
+    const extract = (name) => {
+      const m = html.match(new RegExp(`name="${name}"[^>]+value="([^"]*)"`, 'i'));
+      return m ? m[1] : '';
+    };
+
     const today = new Date();
     const weekAgo = new Date(today);
     weekAgo.setDate(weekAgo.getDate() - 14);
     const dd = (d) => String(d).padStart(2, '0');
-    const dataDa = `${dd(weekAgo.getDate())}%2F${dd(weekAgo.getMonth() + 1)}%2F${weekAgo.getFullYear()}`;
-    const dataA = `${dd(today.getDate())}%2F${dd(today.getMonth() + 1)}%2F${today.getFullYear()}`;
+    const dataDa = `${dd(weekAgo.getDate())}/${dd(weekAgo.getMonth() + 1)}/${weekAgo.getFullYear()}`;
+    const dataA = `${dd(today.getDate())}/${dd(today.getMonth() + 1)}/${today.getFullYear()}`;
+
+    // Step 3: POST ricerca (senza doppio encoding!)
+    const bodyParams = new URLSearchParams();
+    bodyParams.append('ScriptManager1', 'UpdatePanel1|btnSearch');
+    bodyParams.append('txtDataDa', dataDa);
+    bodyParams.append('txtDataA', dataA);
+    bodyParams.append('TIPO', 'rbPartenze');
+    bodyParams.append('btnSearch', 'Cerca');
+    bodyParams.append('HFCodiceContratto', codiceCliente);
+    bodyParams.append('__VIEWSTATE', extract('__VIEWSTATE'));
+    bodyParams.append('__VIEWSTATEGENERATOR', extract('__VIEWSTATEGENERATOR'));
+    bodyParams.append('__EVENTVALIDATION', extract('__EVENTVALIDATION'));
+    bodyParams.append('__ASYNCPOST', 'true');
 
     const searchRes = await fetch('https://weblabeling.gls-italy.com/Secure_Page/TrackTrace.aspx', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'Cookie': allCookies,
+        'Cookie': finalCookies,
         'X-Requested-With': 'XMLHttpRequest',
         'X-MicrosoftAjax': 'Delta=true',
       },
-      body: `ScriptManager1=UpdatePanel1%7CbtnSearch&txtDataDa=${dataDa}&txtDataA=${dataA}&TIPO=rbPartenze&btnSearch=Cerca&HFCodiceContratto=${codiceCliente}&__ASYNCPOST=true`,
+      body: bodyParams.toString(),
     });
 
     const text = await searchRes.text();
 
-    // Estrai spedizioni
+    // Debug: log dei primi 1000 caratteri
+    console.log('Response start:', text.substring(0, 500));
+    console.log('VIEWSTATE length:', extract('__VIEWSTATE').length);
+    console.log('Cookies auth:', finalCookies.includes('.ASPXFORMSAUTH'));
+
+    // Estrai spedizioni dal delta AJAX o dall'HTML
     const spedizioni = [];
-    const rows = text.match(/<tr[^>]*class="[^"]*dxgvDataRow[^"]*"[^>]*>([\s\S]*?)<\/tr>/gi);
+    const rowRegex = /<tr[^>]*class="[^"]*dxgvDataRow[^"]*"[^>]*>([\s\S]*?)<\/tr>/gi;
+    const rows = text.match(rowRegex);
 
     if (rows) {
       for (const row of rows) {
@@ -63,22 +93,24 @@ export default async function handler(req, res) {
         if (tds && tds.length >= 13) {
           const clean = (i) => tds[i] ? tds[i].replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, '').trim() : '';
           spedizioni.push({
-            dataPartenza: clean(2),
-            spedizione: clean(3),
-            ddt: clean(4),
-            destinatario: clean(6),
-            esito: clean(7),
-            localita: clean(9),
+            dataPartenza: clean(1),
+            spedizione: clean(2),
+            ddt: clean(3),
+            destinatario: clean(5),
+            esito: clean(6),
+            localita: clean(8),
+            indirizzo: clean(9),
           });
         }
       }
     }
 
-    if (spedizioni.length === 0) {
-      return res.status(200).json({ success: true, spedizioni: [], sample: text.substring(0, 400) });
-    }
-
-    return res.status(200).json({ success: true, spedizioni, totale: spedizioni.length });
+    return res.status(200).json({
+      success: true,
+      spedizioni,
+      totale: spedizioni.length,
+      debug: text.substring(0, 300),
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
