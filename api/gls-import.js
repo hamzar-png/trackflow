@@ -32,7 +32,9 @@ export default async function handler(req, res) {
       }),
       redirect: 'manual',
     });
-
+console.log("LOGIN STATUS:", loginRes.status);
+console.log("LOGIN LOCATION:", loginRes.headers.get("location"));
+console.log("LOGIN COOKIES:", loginRes.headers.getSetCookie?.());
     cookieJar.push(...(loginRes.headers.getSetCookie?.() || []));
     const cookies = mergeCookies(cookieJar);
 
