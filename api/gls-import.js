@@ -14,11 +14,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Credenziali mancanti' });
     }
 
-    // Step 0: Inizializza sessione (prendi ASP.NET_SessionId)
+    // Step 0: Inizializza sessione
     const initRes = await fetch('https://weblabeling.gls-italy.com/Home/Login');
     let cookieJar = [...(initRes.headers.getSetCookie?.() || [])];
 
-    // Step 1: Login
+    // Step 1: Login con i campi CORRETTI (UserName non Cliente!)
     const loginRes = await fetch('https://weblabeling.gls-italy.com/Home/Login', {
       method: 'POST',
       headers: {
@@ -26,15 +26,20 @@ export default async function handler(req, res) {
         'Cookie': mergeCookies(cookieJar),
       },
       body: new URLSearchParams({
-        Sede: sede.toUpperCase(),
-        Cliente: codiceCliente,
+        Sede: sede.toLowerCase(),
+        UserName: codiceCliente,
         Password: password,
+        LoginButton: 'Log In',
+        __EVENTTARGET: 'LoginButton',
+        __EVENTARGUMENT: '',
       }),
       redirect: 'manual',
     });
-console.log("LOGIN STATUS:", loginRes.status);
-console.log("LOGIN LOCATION:", loginRes.headers.get("location"));
-console.log("LOGIN COOKIES:", loginRes.headers.getSetCookie?.());
+
+    console.log("LOGIN STATUS:", loginRes.status);
+    console.log("LOGIN LOCATION:", loginRes.headers.get("location"));
+    console.log("LOGIN COOKIES:", loginRes.headers.getSetCookie?.());
+
     cookieJar.push(...(loginRes.headers.getSetCookie?.() || []));
     const cookies = mergeCookies(cookieJar);
 
@@ -52,7 +57,6 @@ console.log("LOGIN COOKIES:", loginRes.headers.getSetCookie?.());
 
       cookieJar.push(...(followRes.headers.getSetCookie?.() || []));
 
-      // Eventuale secondo redirect
       const loc2 = followRes.headers.get('location') || '';
       if (loc2) {
         const redirectUrl2 = loc2.startsWith('http')
@@ -82,7 +86,6 @@ console.log("LOGIN COOKIES:", loginRes.headers.getSetCookie?.());
       return m ? m[1] : '';
     };
 
-    // Date
     const today = new Date();
     const weekAgo = new Date(today);
     weekAgo.setDate(weekAgo.getDate() - 14);
@@ -116,7 +119,6 @@ console.log("LOGIN COOKIES:", loginRes.headers.getSetCookie?.());
 
     const text = await searchRes.text();
 
-    // Estrai spedizioni
     const spedizioni = [];
     const rows = text.match(/<tr[^>]*class="[^"]*dxgvDataRow[^"]*"[^>]*>([\s\S]*?)<\/tr>/gi);
 
