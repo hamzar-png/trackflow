@@ -1,5 +1,11 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  'https://wogthnhzdzgblqghwvja.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZ3Robmh6ZHpnYmxxZ2h3dmphIiwicm9zZSI6ImFub24iLCJpYXQiOjE3ODM3NzY4MjUsImV4cCI6MjA5OTM1MjgyNX0.drbfHRnTeezViflEaqXDBED6H4zMzSq4-MRyTXHqt1E'
+);
+
 export default async function handler(req, res) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -19,10 +25,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Dati mancanti' });
     }
 
-    // Import Supabase
-    const { supabase } = await import('../src/supabaseClient.js');
-
-    // Trova utente dalla API key
     const { data: imp } = await supabase
       .from('impostazioni')
       .select('user_id')
