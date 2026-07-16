@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   'https://wogthnhzdzgblqghwvja.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZ3Robmh6ZHpnYmxxZ2h3dmphIiwicm9zZSI6ImFub24iLCJpYXQiOjE3ODM3NzY4MjUsImV4cCI6MjA5OTM1MjgyNX0.drbfHRnTeezViflEaqXDBED6H4zMzSq4-MRyTXHqt1E'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZ3Robmh6ZHpnYmxxZ2h3dmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3NzY4MjUsImV4cCI6MjA5OTM1MjgyNX0.drbfHRnTeezViflEaqXDBED6H4zMzSq4-MRyTXHqt1E'
 );
 
 export default async function handler(req, res) {
@@ -25,14 +25,17 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Dati mancanti' });
     }
 
-    const { data: imp } = await supabase
+    const { data: imp, error: queryError } = await supabase
       .from('impostazioni')
       .select('user_id')
       .eq('api_key', apiKey)
       .single();
 
     if (!imp || !imp.user_id) {
-      return res.status(401).json({ error: 'API key non valida' });
+      return res.status(401).json({ 
+        error: 'API key non valida', 
+        debug: { apiKey, hasData: !!imp, queryError: queryError?.message }
+      });
     }
 
     const { error } = await supabase.from('spedizioni').insert([{
