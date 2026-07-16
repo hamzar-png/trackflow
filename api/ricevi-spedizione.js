@@ -1,4 +1,13 @@
 export default async function handler(req, res) {
+  // CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   try {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
@@ -10,18 +19,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Dati mancanti' });
     }
 
-    // Verifica API key (collegata all'utente)
-    const { data: imp, error: impError } = await fetch(
-      `${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:5173'}/api/trova-utente-da-apikey?key=${apiKey}`
-    ).then(r => r.json());
+    // Import Supabase
+    const { supabase } = await import('../src/supabaseClient.js');
+
+    // Trova utente dalla API key
+    const { data: imp } = await supabase
+      .from('impostazioni')
+      .select('user_id')
+      .eq('api_key', apiKey)
+      .single();
 
     if (!imp || !imp.user_id) {
       return res.status(401).json({ error: 'API key non valida' });
     }
 
-    // Inserisci la spedizione
-    const supabase = (await import('./supabaseClient')).supabase;
-    
     const { error } = await supabase.from('spedizioni').insert([{
       tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
       cliente: destinatario || 'Da assegnare',
