@@ -8,6 +8,7 @@ function Impostazioni({ onClose }) {
   const [glsSede, setGlsSede] = useState('');
   const [glsCodiceCliente, setGlsCodiceCliente] = useState('');
   const [glsPassword, setGlsPassword] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [salvato, setSalvato] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -31,6 +32,7 @@ function Impostazioni({ onClose }) {
       setGlsSede(data.gls_sede || '');
       setGlsCodiceCliente(data.gls_username || '');
       setGlsPassword(data.gls_password || '');
+      setApiKey(data.api_key || '');
     }
     setLoading(false);
   };
@@ -59,6 +61,7 @@ function Impostazioni({ onClose }) {
           gls_username: glsCodiceCliente,
           gls_password: glsPassword,
           gls_sede: glsSede,
+          api_key: apiKey,
         })
         .eq('user_id', user.id);
       error = updateError;
@@ -72,6 +75,7 @@ function Impostazioni({ onClose }) {
           gls_username: glsCodiceCliente,
           gls_password: glsPassword,
           gls_sede: glsSede,
+          api_key: apiKey,
         });
       error = insertError;
     }
@@ -110,6 +114,24 @@ function Impostazioni({ onClose }) {
               <div className="imp-group">
                 <label>Password</label>
                 <input type="password" value={glsPassword} onChange={(e) => setGlsPassword(e.target.value)} placeholder="Password WebLabeling" />
+              </div>
+            </div>
+          </div>
+
+          <div className="imp-section">
+            <h3>🔑 API Key TrackFlow</h3>
+            <p className="imp-desc">Usa questa chiave per collegare lo script Tampermonkey a TrackFlow.</p>
+            <div className="imp-row">
+              <div className="imp-group">
+                <label>API Key</label>
+                <input type="text" value={apiKey} onChange={(e) => setApiKey(e.target.value)} 
+                  placeholder="Genera una chiave unica (es. tf-xxxxx)" />
+                {!apiKey && (
+                  <button type="button" onClick={() => setApiKey('tf-' + Math.random().toString(36).substring(2, 10))}
+                    style={{marginTop:'8px', padding:'6px 12px', background:'#38bdf8', color:'#0f172a', border:'none', borderRadius:'6px', cursor:'pointer', fontSize:'0.8rem'}}>
+                    Genera chiave
+                  </button>
+                )}
               </div>
             </div>
           </div>
