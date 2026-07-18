@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './DettaglioSpedizione.css';
 import Footer from '../components/Footer';
+import { supabase } from '../supabaseClient';
 
 function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
   const { trackingId } = useParams();
@@ -235,29 +236,71 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
         </div>
       </div>
 
-      {ruolo === 'mittente' && (
-        <div className="dettaglio-actions">
-          {inModifica ? (
-            <>
-              <button className="azione-btn annulla" onClick={() => setInModifica(false)}>
-                Annulla
-              </button>
-              <button className="azione-btn salva" onClick={handleSalva}>
-                Salva modifiche
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="azione-btn elimina" onClick={handleElimina}>
-                🗑️ Elimina spedizione
-              </button>
-              <button className="azione-btn modifica" onClick={iniziaModifica}>
-                ✏️ Modifica spedizione
-              </button>
-            </>
-          )}
-        </div>
+     {ruolo === 'mittente' && (
+  <div className="dettaglio-actions">
+    {inModifica ? (
+      <>
+        <button className="azione-btn annulla" onClick={() => setInModifica(false)}>
+          Annulla
+        </button>
+        <button className="azione-btn salva" onClick={handleSalva}>
+          Salva modifiche
+        </button>
+      </>
+    ) : (
+      <>
+        <button className="azione-btn elimina" onClick={handleElimina}>
+          🗑️ Elimina spedizione
+        </button>
+        <button className="azione-btn modifica" onClick={iniziaModifica}>
+          ✏️ Modifica spedizione
+        </button>
+        {/* Upload DDT */}
+        <label className="azione-btn ddt-upload">
+          📄 Carica DDT
+          <input
+            type="file"
+            accept=".pdf"
+            style={{ display: 'none' }}
+            onChange={async (e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              
+              const { data: { user } } = await supabase.auth.getUser();
+              const filePath = `${user.id}/${spedizione.tracking_id}_DDT.pdf`;
+              
+              const { error } = await supabase.storage
+                .from('ddt')
+                .upload(filePath, file, { upsert: true });
+              
+              if (!error) {
+                const { data: urlData } = supabase.storage
+                  .from('ddt')
+                  .getPublicUrl(filePath);
+                
+                await supabase
+                  .from('spedizioni')
+                  .update({ ddt_url: urlData.publicUrl })
+                  .eq('tracking_id', spedizione.tracking_id);
+                
+                alert('DDT caricato!');
+                window.location.reload();
+              } else {
+                alert('Errore: ' + error.message);
+              }
+            }}
+          />
+        </label>
+        {spedizione.ddt_url && (
+          <a href={spedizione.ddt_url} target="_blank" rel="noopener noreferrer" className="azione-btn ddt-view">
+            👁️ Vedi DDT
+          </a>
+        )}
+      </>
+    )}
+  </div>
       )}
+      <Footer />
     </div>
   );
 }

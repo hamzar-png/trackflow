@@ -277,4 +277,30 @@
 .stato-select:focus {
   outline: none;
   border-color: #38bdf8;
+.azione-btn.ddt-upload {
+  background: #0f172a;
+  color: #f59e0b;
+  border: 1px solid #f59e0b;
+  cursor: pointer;
+}
+
+.azione-btn.ddt-upload:hover {
+  background: #f59e0b;
+  color: #0f172a;
+}
+
+.azione-btn.ddt-view {
+  background: #0f172a;
+  color: #34d399;
+  border: 1px solid #34d399;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.azione-btn.ddt-view:hover {
+  background: #34d399;
+  color: #0f172a;
+}
 }
