@@ -25,17 +25,30 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Dati mancanti' });
     }
 
-    const { data: imp, error: queryError } = await supabase
+    // Trova utente dalla API key
+    const { data: imp } = await supabase
       .from('impostazioni')
       .select('user_id')
       .eq('api_key', apiKey)
       .single();
 
     if (!imp || !imp.user_id) {
-      return res.status(401).json({ 
-        error: 'API key non valida', 
-        debug: { apiKey, hasData: !!imp, queryError: queryError?.message }
-      });
+      return res.status(401).json({ error: 'API key non valida' });
+    }
+
+    // Cerca destinatario con nome simile
+    let destinatario_id = null;
+    if (destinatario) {
+      const { data: destMatch } = await supabase
+        .from('destinatari')
+        .select('id')
+        .eq('mittente_id', imp.user_id)
+        .ilike('nome_azienda', `%${destinatario}%`)
+        .single();
+
+      if (destMatch) {
+        destinatario_id = destMatch.id;
+      }
     }
 
     const { error } = await supabase.from('spedizioni').insert([{
@@ -51,13 +64,18 @@ export default async function handler(req, res) {
       destinazione: localita || '',
       note: indirizzo ? `${indirizzo}, ${cap || ''}` : '',
       user_id: imp.user_id,
+      destinatario_id: destinatario_id,
     }]);
 
     if (error) {
       return res.status(500).json({ error: error.message });
     }
 
-    return res.status(200).json({ success: true, message: 'Spedizione ricevuta!' });
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Spedizione ricevuta!',
+      assegnata: !!destinatario_id
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
