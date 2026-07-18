@@ -262,7 +262,7 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
             type="file"
             accept=".pdf"
             style={{ display: 'none' }}
-           onChange={async (e) => {
+          onChange={async (e) => {
   const file = e.target.files[0];
   if (!file) return;
   
@@ -274,17 +274,18 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
     .upload(filePath, file, { upsert: true });
   
   if (!error) {
-    const publicUrl = `https://wogthnhzdzgblqghwvja.supabase.co/storage/v1/object/public/ddt/${filePath}`;
+    // URL pubblico diretto
+    const publicUrl = `https://wogthnhzdzgblqghwvja.supabase.co/storage/v1/object/public/ddt/${user.id}/${spedizione.tracking_id}_DDT.pdf`;
     
     await supabase
       .from('spedizioni')
       .update({ ddt_url: publicUrl })
       .eq('tracking_id', spedizione.tracking_id);
     
-    alert('DDT caricato!');
+    alert('DDT caricato! URL: ' + publicUrl);
     window.location.reload();
   } else {
-    alert('Errore: ' + error.message);
+    alert('Errore upload: ' + error.message);
   }
 }}
           />
