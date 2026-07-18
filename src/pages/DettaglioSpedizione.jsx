@@ -290,11 +290,14 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
 }}
           />
         </label>
-        {spedizione.ddt_url && (
-          <a href={spedizione.ddt_url} target="_blank" rel="noopener noreferrer" className="azione-btn ddt-view">
-            👁️ Vedi DDT
-          </a>
-        )}
+       {spedizione.ddt_url && (
+  <button 
+    onClick={() => window.open(spedizione.ddt_url, '_blank')}
+    className="azione-btn ddt-view"
+  >
+    👁️ Vedi DDT
+  </button>
+)}
       </>
     )}
   </div>
