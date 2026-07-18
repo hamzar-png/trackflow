@@ -230,15 +230,17 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
               {(ddtUrl || spedizione.ddt_url) && (
   <>
     <button onClick={() => window.open(ddtUrl || spedizione.ddt_url, '_blank')} className="azione-btn ddt-view">👁️ Vedi DDT</button>
-    <button onClick={async () => {
-      if (!window.confirm('Eliminare il DDT?')) return;
-      const { data: { user } } = await supabase.auth.getUser();
-      const filePath = `${user.id}/${spedizione.tracking_id}_DDT.pdf`;
-      await supabase.storage.from('ddt').remove([filePath]);
-      await supabase.from('spedizioni').update({ ddt_url: null }).eq('tracking_id', spedizione.tracking_id);
-      setDdtUrl('');
-      alert('DDT eliminato!');
-    }} className="azione-btn ddt-delete">🗑️ Elimina DDT</button>
+   <button onClick={async () => {
+  if (!window.confirm('Eliminare il DDT?')) return;
+  const { data: { user } } = await supabase.auth.getUser();
+  const filePath = `${user.id}/${spedizione.tracking_id}_DDT.pdf`;
+  await supabase.storage.from('ddt').remove([filePath]);
+  await supabase.from('spedizioni').update({ ddt_url: null }).eq('tracking_id', spedizione.tracking_id);
+  // Aggiorna sia lo stato locale che l'oggetto spedizione
+  setDdtUrl('');
+  spedizione.ddt_url = null;
+  alert('DDT eliminato!');
+}} className="azione-btn ddt-delete">🗑️ Elimina DDT</button>
   </>
 )}
             </>
