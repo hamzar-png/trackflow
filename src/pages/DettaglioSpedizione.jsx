@@ -1,16 +1,22 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import './DettaglioSpedizione.css';
 import Footer from '../components/Footer';
-import { supabase } from '../supabaseClient';
 
 function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
   const { trackingId } = useParams();
   const navigate = useNavigate();
   const [inModifica, setInModifica] = useState(false);
   const [formData, setFormData] = useState({});
+  const [ddtUrl, setDdtUrl] = useState('');
 
   const spedizione = spedizioni.find(s => s.tracking_id === trackingId);
+
+  // Carica ddt_url all'inizio
+  if (spedizione && spedizione.ddt_url && !ddtUrl) {
+    setDdtUrl(spedizione.ddt_url);
+  }
 
   if (!spedizione) {
     return (
@@ -98,12 +104,7 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
       <div className="dettaglio-title">
         <h2>Spedizione {spedizione.tracking_id}</h2>
         {inModifica ? (
-          <select
-            name="stato"
-            value={formData.stato}
-            onChange={handleChange}
-            className="stato-select"
-          >
+          <select name="stato" value={formData.stato} onChange={handleChange} className="stato-select">
             <option value="In attesa">In attesa</option>
             <option value="In transito">In transito</option>
             <option value="Consegnato">Consegnato</option>
@@ -120,13 +121,7 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
         <div className="info-card">
           <h3>Cliente</h3>
           {inModifica ? (
-            <input
-              type="text"
-              name="cliente"
-              value={formData.cliente}
-              onChange={handleChange}
-              className="edit-input"
-            />
+            <input type="text" name="cliente" value={formData.cliente} onChange={handleChange} className="edit-input" />
           ) : (
             <>
               <p className="info-value">{spedizione.cliente}</p>
@@ -135,17 +130,11 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
             </>
           )}
         </div>
-
         <div className="info-card">
           <h3>Corriere</h3>
           {inModifica ? (
             <>
-              <select
-                name="corriere"
-                value={formData.corriere}
-                onChange={handleChange}
-                className="edit-input"
-              >
+              <select name="corriere" value={formData.corriere} onChange={handleChange} className="edit-input">
                 <option value="BRT">BRT</option>
                 <option value="DHL">DHL</option>
                 <option value="GLS">GLS</option>
@@ -155,13 +144,7 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
                 <option value="Tratta diretta">Tratta diretta</option>
               </select>
               <p className="info-label">Tracking</p>
-              <input
-                type="text"
-                name="tracking"
-                value={formData.tracking}
-                onChange={handleChange}
-                className="edit-input"
-              />
+              <input type="text" name="tracking" value={formData.tracking} onChange={handleChange} className="edit-input" />
             </>
           ) : (
             <>
@@ -171,26 +154,13 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
             </>
           )}
         </div>
-
         <div className="info-card">
           <h3>DDT</h3>
           {inModifica ? (
             <>
-              <input
-                type="text"
-                name="ddt"
-                value={formData.ddt}
-                onChange={handleChange}
-                className="edit-input"
-              />
+              <input type="text" name="ddt" value={formData.ddt} onChange={handleChange} className="edit-input" />
               <p className="info-label">Data spedizione</p>
-              <input
-                type="text"
-                name="data"
-                value={formData.data}
-                onChange={handleChange}
-                className="edit-input"
-              />
+              <input type="text" name="data" value={formData.data} onChange={handleChange} className="edit-input" />
             </>
           ) : (
             <>
@@ -202,19 +172,12 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
           <p className="info-label">Consegna prevista</p>
           <p className="info-sub">{dettaglioExtra.dataConsegna}</p>
         </div>
-
         <div className="info-card">
           <h3>Posizione attuale</h3>
           <p className="info-value posizione">{dettaglioExtra.posizione}</p>
           <p className="info-label">Note</p>
           {inModifica ? (
-            <textarea
-              name="note"
-              value={formData.note}
-              onChange={handleChange}
-              className="edit-input"
-              rows={2}
-            />
+            <textarea name="note" value={formData.note} onChange={handleChange} className="edit-input" rows={2} />
           ) : (
             <p className="info-sub">{dettaglioExtra.note}</p>
           )}
@@ -236,76 +199,40 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
         </div>
       </div>
 
-     {ruolo === 'mittente' && (
-  <div className="dettaglio-actions">
-    {inModifica ? (
-      <>
-        <button className="azione-btn annulla" onClick={() => setInModifica(false)}>
-          Annulla
-        </button>
-        <button className="azione-btn salva" onClick={handleSalva}>
-          Salva modifiche
-        </button>
-      </>
-    ) : (
-      <>
-        <button className="azione-btn elimina" onClick={handleElimina}>
-          🗑️ Elimina spedizione
-        </button>
-        <button className="azione-btn modifica" onClick={iniziaModifica}>
-          ✏️ Modifica spedizione
-        </button>
-        {/* Upload DDT */}
-        <label className="azione-btn ddt-upload">
-          📄 Carica DDT
-          <input
-            type="file"
-            accept=".pdf"
-            style={{ display: 'none' }}
-          onChange={async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  const filePath = `${user.id}/${spedizione.tracking_id}_DDT.pdf`;
-  
-  const { error } = await supabase.storage
-    .from('ddt')
-    .upload(filePath, file, { upsert: true });
-  
-  if (error) {
-    alert('Errore upload: ' + error.message);
-    return;
-  }
-  
-  const publicUrl = `https://wogthnhzdzgblqghwvja.supabase.co/storage/v1/object/public/ddt/${user.id}/${spedizione.tracking_id}_DDT.pdf`;
-  
-  const { error: updateError } = await supabase
-    .from('spedizioni')
-    .update({ ddt_url: publicUrl })
-    .eq('tracking_id', spedizione.tracking_id);
-  
-  if (updateError) {
-    alert('Errore salvataggio URL: ' + updateError.message);
-  } else {
-    alert('✅ DDT caricato con successo!');
-    // Ricarica la pagina senza l'URL del DDT nell'URL
-    navigate(0);
-  }
-}}
-          />
-        </label>
-       {spedizione.ddt_url && (
-  <button 
-    onClick={() => window.open(spedizione.ddt_url, '_blank')}
-    className="azione-btn ddt-view"
-  >
-    👁️ Vedi DDT
-  </button>
-)}
-      </>
-    )}
-  </div>
+      {ruolo === 'mittente' && (
+        <div className="dettaglio-actions">
+          {inModifica ? (
+            <>
+              <button className="azione-btn annulla" onClick={() => setInModifica(false)}>Annulla</button>
+              <button className="azione-btn salva" onClick={handleSalva}>Salva modifiche</button>
+            </>
+          ) : (
+            <>
+              <button className="azione-btn elimina" onClick={handleElimina}>🗑️ Elimina spedizione</button>
+              <button className="azione-btn modifica" onClick={iniziaModifica}>✏️ Modifica spedizione</button>
+              <label className="azione-btn ddt-upload">
+                📄 Carica DDT
+                <input type="file" accept=".pdf" style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const { data: { user } } = await supabase.auth.getUser();
+                    const filePath = `${user.id}/${spedizione.tracking_id}_DDT.pdf`;
+                    const { error } = await supabase.storage.from('ddt').upload(filePath, file, { upsert: true });
+                    if (error) { alert('Errore: ' + error.message); return; }
+                    const publicUrl = `https://wogthnhzdzgblqghwvja.supabase.co/storage/v1/object/public/ddt/${user.id}/${spedizione.tracking_id}_DDT.pdf`;
+                    const { error: updateError } = await supabase.from('spedizioni').update({ ddt_url: publicUrl }).eq('tracking_id', spedizione.tracking_id);
+                    if (updateError) { alert('Errore: ' + updateError.message); }
+                    else { setDdtUrl(publicUrl); alert('✅ DDT caricato!'); }
+                  }}
+                />
+              </label>
+              {(ddtUrl || spedizione.ddt_url) && (
+                <button onClick={() => window.open(ddtUrl || spedizione.ddt_url, '_blank')} className="azione-btn ddt-view">👁️ Vedi DDT</button>
+              )}
+            </>
+          )}
+        </div>
       )}
       <Footer />
     </div>
