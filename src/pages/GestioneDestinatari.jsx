@@ -8,7 +8,7 @@ function GestioneDestinatari() {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     nome_azienda: '',
-    email: '',
+    username: '',
     password: '',
     confermaPassword: '',
   });
@@ -42,7 +42,7 @@ function GestioneDestinatari() {
     setError('');
     setSuccess('');
 
-    if (!formData.nome_azienda || !formData.email || !formData.password) {
+    if (!formData.nome_azienda || !formData.username || !formData.password) {
       setError('Compila tutti i campi obbligatori.');
       return;
     }
@@ -64,25 +64,29 @@ function GestioneDestinatari() {
       .from('destinatari')
       .insert([{
         nome_azienda: formData.nome_azienda,
-        email: formData.email,
+        username: formData.username,
+        email: formData.username + '@trackflow.local',
         password_hash: formData.password,
         mittente_id: user.id,
       }]);
 
     if (insertError) {
-      setError('Errore: ' + insertError.message);
+      if (insertError.message.includes('unique')) {
+        setError('Username già in uso. Scegline un altro.');
+      } else {
+        setError('Errore: ' + insertError.message);
+      }
       return;
     }
 
     setSuccess('Destinatario creato con successo!');
-    setFormData({ nome_azienda: '', email: '', password: '', confermaPassword: '' });
+    setFormData({ nome_azienda: '', username: '', password: '', confermaPassword: '' });
     setMostraForm(false);
     caricaDestinatari();
   };
 
   const eliminaDestinatario = async (id) => {
-    if (!window.confirm('Eliminare questo destinatario? Non potrà più accedere.')) return;
-
+    if (!window.confirm('Eliminare questo destinatario?')) return;
     await supabase.from('destinatari').delete().eq('id', id);
     setDestinatari(destinatari.filter(d => d.id !== id));
   };
@@ -94,18 +98,11 @@ function GestioneDestinatari() {
       <div className="gestione-header">
         <h3>Gestione Destinatari</h3>
         <p className="gestione-subtitle">
-          Crea account per i tuoi clienti. Potranno accedere e vedere solo le spedizioni che gli assegnerai.
+          Crea account per i tuoi clienti. Useranno username e password per accedere.
         </p>
       </div>
 
-      <button
-        className="gestione-add-btn"
-        onClick={() => {
-          setMostraForm(!mostraForm);
-          setError('');
-          setSuccess('');
-        }}
-      >
+      <button className="gestione-add-btn" onClick={() => { setMostraForm(!mostraForm); setError(''); setSuccess(''); }}>
         {mostraForm ? '✕ Chiudi' : '+ Nuovo destinatario'}
       </button>
 
@@ -117,49 +114,21 @@ function GestioneDestinatari() {
           <div className="gestione-form-row">
             <div className="gestione-form-group">
               <label>Nome azienda *</label>
-              <input
-                type="text"
-                name="nome_azienda"
-                value={formData.nome_azienda}
-                onChange={handleChange}
-                placeholder="Es. Loccioni"
-                required
-              />
+              <input type="text" name="nome_azienda" value={formData.nome_azienda} onChange={handleChange} placeholder="Es. Loccioni" required />
             </div>
             <div className="gestione-form-group">
-              <label>Email *</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="cliente@azienda.it"
-                required
-              />
+              <label>Username *</label>
+              <input type="text" name="username" value={formData.username} onChange={handleChange} placeholder="nome.utente" required />
             </div>
           </div>
           <div className="gestione-form-row">
             <div className="gestione-form-group">
               <label>Password *</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Minimo 6 caratteri"
-                required
-              />
+              <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Minimo 6 caratteri" required />
             </div>
             <div className="gestione-form-group">
               <label>Conferma password *</label>
-              <input
-                type="password"
-                name="confermaPassword"
-                value={formData.confermaPassword}
-                onChange={handleChange}
-                placeholder="Ripeti la password"
-                required
-              />
+              <input type="password" name="confermaPassword" value={formData.confermaPassword} onChange={handleChange} placeholder="Ripeti la password" required />
             </div>
           </div>
           <div className="gestione-form-actions">
@@ -173,7 +142,7 @@ function GestioneDestinatari() {
           <thead>
             <tr>
               <th>Azienda</th>
-              <th>Email</th>
+              <th>Username</th>
               <th>Creato il</th>
               <th></th>
             </tr>
@@ -189,15 +158,10 @@ function GestioneDestinatari() {
               destinatari.map((dest) => (
                 <tr key={dest.id}>
                   <td>{dest.nome_azienda}</td>
-                  <td>{dest.email}</td>
+                  <td>{dest.username}</td>
                   <td>{new Date(dest.created_at).toLocaleDateString('it-IT')}</td>
                   <td>
-                    <button
-                      className="gestione-elimina-btn"
-                      onClick={() => eliminaDestinatario(dest.id)}
-                    >
-                      🗑️
-                    </button>
+                    <button className="gestione-elimina-btn" onClick={() => eliminaDestinatario(dest.id)}>🗑️</button>
                   </td>
                 </tr>
               ))

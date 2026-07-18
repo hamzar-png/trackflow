@@ -43,15 +43,15 @@ const handleSubmit = async (e) => {
         {error && <div className="login-error">{error}</div>}
 
         <form className="login-form" onSubmit={handleSubmit}>
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            placeholder="nome@azienda.it"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+          <label htmlFor="email">{isMittente ? 'Email' : 'Username'}</label>
+<input
+  type={isMittente ? 'email' : 'text'}
+  id="email"
+  placeholder={isMittente ? 'nome@azienda.it' : 'Il tuo username'}
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  required
+/>
 
           <label htmlFor="password">Password</label>
           <input
@@ -85,6 +85,8 @@ const handleSubmit = async (e) => {
           )}
         </p>
       </div>
+
+      <Footer />
     </div>
   );
 }

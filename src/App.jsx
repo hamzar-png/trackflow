@@ -68,7 +68,7 @@ function App() {
     const { data: dest } = await supabase
       .from('destinatari')
       .select('id')
-      .eq('email', email)
+      .eq('username', email)
       .single();
 
     if (dest) {
