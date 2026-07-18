@@ -64,24 +64,24 @@ function App() {
     setLoading(false);
   };
 
-  const caricaSpedizioniDestinatario = async (email) => {
-    const { data: dest } = await supabase
-      .from('destinatari')
-      .select('id')
-      .eq('username', email)
-      .single();
+  const caricaSpedizioniDestinatario = async (username) => {
+  const { data: dest } = await supabase
+    .from('destinatari')
+    .select('id')
+    .eq('username', username)
+    .single();
 
-    if (dest) {
-      const { data } = await supabase
-        .from('spedizioni')
-        .select('*')
-        .eq('destinatario_id', dest.id)
-        .order('created_at', { ascending: false });
+  if (dest) {
+    const { data } = await supabase
+      .from('spedizioni')
+      .select('*')
+      .eq('destinatario_id', dest.id)
+      .order('created_at', { ascending: false });
 
-      if (data) setSpedizioni(data);
-    }
-    setLoading(false);
-  };
+    if (data) setSpedizioni(data);
+  }
+  setLoading(false);
+};
 
   const handleLogin = async (email, password, tipo) => {
     if (tipo === 'mittente') {
@@ -94,20 +94,33 @@ function App() {
         caricaSpedizioniMittente(data.user.id);
       }
       return { success: true };
-    } else {
-      const { data: dest, error } = await supabase
-        .from('destinatari').select('*').eq('email', email).single();
+   } else {
+  const { data: dest, error } = await supabase
+    .from('destinatari')
+    .select('*')
+    .eq('username', email)
+    .single();
 
-      if (error || !dest) return { success: false, message: 'Credenziali non valide.' };
-      if (dest.password_hash !== password) return { success: false, message: 'Password non valida.' };
+  if (error || !dest) {
+    return { success: false, message: 'Credenziali non valide.' };
+  }
 
-      localStorage.setItem('destinatario', JSON.stringify({ email: dest.email, nome_azienda: dest.nome_azienda, id: dest.id }));
-      setRuolo('destinatario');
-      setAzienda(dest.nome_azienda);
-      setIsLoggedIn(true);
-      caricaSpedizioniDestinatario(dest.email);
-      return { success: true };
-    }
+  if (dest.password_hash !== password) {
+    return { success: false, message: 'Password non valida.' };
+  }
+
+  localStorage.setItem('destinatario', JSON.stringify({
+    username: dest.username,
+    nome_azienda: dest.nome_azienda,
+    id: dest.id,
+  }));
+
+  setRuolo('destinatario');
+  setAzienda(dest.nome_azienda);
+  setIsLoggedIn(true);
+  caricaSpedizioniDestinatario(dest.username);
+  return { success: true };
+}
   };
 
   const handleLogout = async () => {
