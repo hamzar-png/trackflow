@@ -262,33 +262,31 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
             type="file"
             accept=".pdf"
             style={{ display: 'none' }}
-            onChange={async (e) => {
-              const file = e.target.files[0];
-              if (!file) return;
-              
-              const { data: { user } } = await supabase.auth.getUser();
-              const filePath = `${user.id}/${spedizione.tracking_id}_DDT.pdf`;
-              
-              const { error } = await supabase.storage
-                .from('ddt')
-                .upload(filePath, file, { upsert: true });
-              
-              if (!error) {
-                const { data: urlData } = supabase.storage
-                  .from('ddt')
-                  .getPublicUrl(filePath);
-                
-                await supabase
-                  .from('spedizioni')
-                  .update({ ddt_url: urlData.publicUrl })
-                  .eq('tracking_id', spedizione.tracking_id);
-                
-                alert('DDT caricato!');
-                window.location.reload();
-              } else {
-                alert('Errore: ' + error.message);
-              }
-            }}
+           onChange={async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  const filePath = `${user.id}/${spedizione.tracking_id}_DDT.pdf`;
+  
+  const { error } = await supabase.storage
+    .from('ddt')
+    .upload(filePath, file, { upsert: true });
+  
+  if (!error) {
+    const publicUrl = `https://wogthnhzdzgblqghwvja.supabase.co/storage/v1/object/public/ddt/${filePath}`;
+    
+    await supabase
+      .from('spedizioni')
+      .update({ ddt_url: publicUrl })
+      .eq('tracking_id', spedizione.tracking_id);
+    
+    alert('DDT caricato!');
+    window.location.reload();
+  } else {
+    alert('Errore: ' + error.message);
+  }
+}}
           />
         </label>
         {spedizione.ddt_url && (
