@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import DettaglioSpedizione from './pages/DettaglioSpedizione';
 import Registrazione from './pages/Registrazione';
+import GestioneDestinatari from './pages/GestioneDestinatari';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -234,6 +235,8 @@ function App() {
       <Route path="/login/:tipo" element={isLoggedIn ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} />
       <Route path="/dashboard" element={isLoggedIn ? <Dashboard azienda={azienda} onLogout={handleLogout} spedizioni={spedizioni} onAggiungiSpedizione={ruolo === 'mittente' ? aggiungiSpedizione : null} onEliminaSpedizione={ruolo === 'mittente' ? eliminaSpedizione : null} onImportaGLS={ruolo === 'mittente' ? importaDaGLS : null} ruolo={ruolo} /> : <Navigate to="/" />} />
       <Route path="/dettaglio/:trackingId" element={isLoggedIn ? <DettaglioSpedizione spedizioni={spedizioni} onElimina={ruolo === 'mittente' ? eliminaSpedizione : null} onModifica={ruolo === 'mittente' ? modificaSpedizione : null} ruolo={ruolo} /> : <Navigate to="/" />} />
+     <Route path="/destinatari" element={isLoggedIn ? <GestioneDestinatari /> : <Navigate to="/" />} />
+
     </Routes>
   );
 }

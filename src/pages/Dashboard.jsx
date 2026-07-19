@@ -84,18 +84,25 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
               Monitora in tempo reale tutte le spedizioni dei tuoi clienti
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
+         <div style={{ display: 'flex', gap: '10px' }}>
+  {ruolo === 'mittente' && (
+    <>
+      <button className="nuova-spedizione-button" onClick={() => setMostraForm(!mostraForm)}>
+        {mostraForm ? '✕ Chiudi' : '+ Nuova spedizione'}
+      </button>
+      <button 
+        className="nuova-spedizione-button" 
+        onClick={() => navigate('/destinatari')}
+        style={{ background: '#0f172a', color: '#38bdf8', border: '1px solid #38bdf8' }}
+      >
+        👥 Gestione Destinatari
+      </button>
+    </>
+  )}
+</div>
+</div>
             
-          {ruolo === 'mittente' && (
-  <button 
-    className="nuova-spedizione-button" 
-    onClick={() => navigate('/destinatari')}
-    style={{ background: '#0f172a', color: '#38bdf8', border: '1px solid #38bdf8' }}
-  >
-    👥 Gestione Destinatari
-  </button>
-)}
-        </div>
+          
 
         {mostraForm && (
           <NuovaSpedizione
