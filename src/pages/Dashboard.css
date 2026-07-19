@@ -236,3 +236,85 @@
     margin: 0 16px;
   }
 }
+@media (max-width: 600px) {
+  .dashboard-header {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  .dashboard-header > div:first-child {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .dashboard-header > div:last-child {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .dashboard-top {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .dashboard-top > div:last-child {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nuova-spedizione-button,
+  .importa-gls-btn {
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+  }
+
+  .impostazioni-btn {
+    font-size: 1.1rem;
+  }
+
+  .logout-button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .spedizioni-table {
+    font-size: 0.65rem;
+    min-width: 500px;
+  }
+
+  .spedizioni-table th,
+  .spedizioni-table td {
+    padding: 6px 3px;
+  }
+
+  .elimina-btn {
+    padding: 2px 4px;
+    font-size: 0.9rem;
+  }
+
+  .dashboard-main {
+    padding: 12px 8px;
+  }
+
+  .dashboard-main h2 {
+    font-size: 1rem;
+  }
+
+  .dashboard-subtitle {
+    font-size: 0.7rem;
+  }
+}
