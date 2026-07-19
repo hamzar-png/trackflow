@@ -159,7 +159,20 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
             </>
           )}
         </div>
+            )}
+
+      {/* Sezione DDT per il destinatario (solo visualizzazione) */}
+      {ruolo === 'destinatario' && (spedizione.ddt_url || ddtUrl) && (
+        <div className="dettaglio-actions">
+          <button 
+            onClick={() => window.open(ddtUrl || spedizione.ddt_url, '_blank')} 
+            className="azione-btn ddt-view"
+          >
+            👁️ Vedi DDT
+          </button>
+        </div>
       )}
+
       <Footer />
     </div>
   );
