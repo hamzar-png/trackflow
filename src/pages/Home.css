@@ -70,7 +70,32 @@
 }
 
 @media (max-width: 600px) {
+  .home-container {
+    padding: 20px 10px;
+    min-height: auto;
+    justify-content: flex-start;
+    padding-top: 40px;
+  }
+
+  .home-logo {
+    font-size: 2rem;
+  }
+
+  .home-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+
   .home-grid {
     flex-direction: column;
+    gap: 12px;
+  }
+
+  .home-card {
+    padding: 20px 16px;
+  }
+
+  .home-icon {
+    font-size: 2.5rem;
   }
 }

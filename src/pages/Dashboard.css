@@ -183,3 +183,56 @@
 .impostazioni-btn:hover {
   background: #334155;
 }
+
+/* MOBILE */
+@media (max-width: 600px) {
+  .dettaglio-header {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .back-button {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .dettaglio-header h1 {
+    font-size: 1.2rem;
+    text-align: center;
+    width: 100%;
+  }
+
+  .dettaglio-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0 16px;
+  }
+
+  .dettaglio-title h2 {
+    font-size: 1rem;
+  }
+
+  .dettaglio-grid {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+
+  .dettaglio-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 16px;
+  }
+
+  .azione-btn {
+    font-size: 0.75rem;
+    padding: 8px 12px;
+  }
+
+  .timeline-card {
+    margin: 0 16px;
+  }
+}

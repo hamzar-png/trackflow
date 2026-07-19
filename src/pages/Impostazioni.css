@@ -122,3 +122,14 @@
 }
 
 .imp-save-btn:hover { background: #7dd3fc; }
+
+@media (max-width: 600px) {
+  .imp-panel {
+    margin: 10px;
+    max-height: 90vh;
+  }
+
+  .imp-row {
+    flex-direction: column;
+  }
+}
