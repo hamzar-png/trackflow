@@ -47,10 +47,10 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
           backgroundImage: `url(${logoSfondo})`,
-          backgroundSize: 'contain',
+          backgroundSize: '50%',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          opacity: 0.05,
+          opacity: 0.10,
           zIndex: 0,
           pointerEvents: 'none',
         }} />
@@ -62,7 +62,7 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
           {logoAzienda && (
             <>
               <span style={{ color: '#64748b', fontSize: '1.2rem' }}>×</span>
-              <img src={logoAzienda} alt="Logo" style={{ height: '32px', maxWidth: '120px', objectFit: 'contain' }} />
+              <img src={logoAzienda} alt="Logo" style={{ height: '40px', maxWidth: '160px', objectFit: 'contain' }} />
             </>
           )}
         </div>
