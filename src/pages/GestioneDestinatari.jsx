@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import './GestioneDestinatari.css';
-
+import { useNavigate } from 'react-router-dom';
 function GestioneDestinatari() {
+  const navigate = useNavigate();
   const [destinatari, setDestinatari] = useState([]);
   const [mostraForm, setMostraForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -100,10 +101,10 @@ function GestioneDestinatari() {
           <h3>Gestione Destinatari</h3>
           <p className="gestione-subtitle">Crea account per i tuoi clienti. Useranno username e password per accedere.</p>
         </div>
-        <button onClick={() => window.location.href = '/dashboard'}
-          style={{ background: '#0f172a', color: '#38bdf8', border: '1px solid #38bdf8', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
-          ← Torna alla dashboard
-        </button>
+        <button onClick={() => navigate('/dashboard')}
+  style={{ background: '#0f172a', color: '#38bdf8', border: '1px solid #38bdf8', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+  ← Torna alla dashboard
+</button>
       </div>
       {/* ... resto del contenuto uguale ... */}
 
