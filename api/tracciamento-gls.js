@@ -10,36 +10,38 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Tracking number mancante' });
     }
 
-    // Usa il tracking pubblico GLS (scraping leggero)
+    const fullTracking = trackingNumber.startsWith('AK') ? trackingNumber : 'AK' + trackingNumber;
+    const millis = Date.now();
+
     const response = await fetch(
-      `https://gls-group.eu/IT/it/ricerca-spedizione?match=${trackingNumber}`,
+      `https://gls-group.com/app/service/open/rest/IT/it/rstt030?match=${fullTracking}&type=NAT&caller=witt002&millis=${millis}`,
       {
         headers: {
+          'Accept': 'application/json',
+          'Cookie': 'gls-cookie-policy=accepted',
           'User-Agent': 'Mozilla/5.0',
-          'Accept': 'text/html',
         },
       }
     );
 
-    const html = await response.text();
+    const data = await response.json();
 
-    // Estrai eventi semplici dalla pagina pubblica
+    // Estrai gli eventi
     const events = [];
+    const tuStatus = data?.tuStatus || [];
     
-    // Cerca lo stato attuale
-    if (html.includes('Consegnato')) {
-      events.push({ data: new Date().toLocaleDateString('it-IT'), stato: 'Consegnato', luogo: '' });
-    } else if (html.includes('In transito')) {
-      events.push({ data: new Date().toLocaleDateString('it-IT'), stato: 'In transito', luogo: '' });
-    } else if (html.includes('In consegna')) {
-      events.push({ data: new Date().toLocaleDateString('it-IT'), stato: 'In consegna', luogo: '' });
+    for (const status of tuStatus) {
+      events.push({
+        data: status.evtDate || '',
+        stato: status.description || status.status || '',
+        luogo: status.city || status.address || '',
+      });
     }
 
     return res.status(200).json({
       success: true,
       tracking: trackingNumber,
-      events: events,
-      note: 'Tracciamento semplificato da pagina pubblica GLS',
+      events: events.length > 0 ? events : [],
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
