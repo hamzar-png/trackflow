@@ -35,12 +35,11 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
 
   const handleImpostazioniClose = () => {
     setMostraImpostazioni(false);
-    caricaImpostazioni(); // Ricarica i loghi dopo aver chiuso
+    caricaImpostazioni();
   };
 
   return (
     <div className="dashboard-container">
-      {/* Sfondo personalizzato */}
       {logoSfondo && (
         <div style={{
           position: 'fixed',
@@ -66,12 +65,8 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
-            {azienda}
-          </span>
-          <button className="impostazioni-btn" onClick={() => setMostraImpostazioni(true)} title="Impostazioni">
-            ⚙️
-          </button>
+          <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>{azienda}</span>
+          <button className="impostazioni-btn" onClick={() => setMostraImpostazioni(true)} title="Impostazioni">⚙️</button>
           <button className="logout-button" onClick={onLogout}>Esci</button>
         </div>
       </header>
@@ -80,47 +75,32 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
         <div className="dashboard-top">
           <div>
             <h2>Le tue spedizioni</h2>
-            <p className="dashboard-subtitle">
-              Monitora in tempo reale tutte le spedizioni dei tuoi clienti
-            </p>
+            <p className="dashboard-subtitle">Monitora in tempo reale tutte le spedizioni dei tuoi clienti</p>
           </div>
-         <div style={{ display: 'flex', gap: '10px' }}>
-  {ruolo === 'mittente' && (
-    <>
-      <button className="nuova-spedizione-button" onClick={() => setMostraForm(!mostraForm)}>
-        {mostraForm ? '✕ Chiudi' : '+ Nuova spedizione'}
-      </button>
-      <button 
-        className="nuova-spedizione-button" 
-        onClick={() => navigate('/destinatari')}
-        style={{ background: '#0f172a', color: '#38bdf8', border: '1px solid #38bdf8' }}
-      >
-        👥 Gestione Destinatari
-      </button>
-    </>
-  )}
-</div>
-</div>
-            
-          
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {ruolo === 'mittente' && (
+              <>
+                <button className="nuova-spedizione-button" onClick={() => setMostraForm(!mostraForm)}>
+                  {mostraForm ? '✕ Chiudi' : '+ Nuova spedizione'}
+                </button>
+                <button className="nuova-spedizione-button" onClick={() => navigate('/destinatari')}
+                  style={{ background: '#0f172a', color: '#38bdf8', border: '1px solid #38bdf8' }}>
+                  👥 Gestione Destinatari
+                </button>
+              </>
+            )}
+          </div>
+        </div>
 
         {mostraForm && (
-          <NuovaSpedizione
-            onAggiungi={onAggiungiSpedizione}
-            onChiudi={() => setMostraForm(false)}
-          />
+          <NuovaSpedizione onAggiungi={onAggiungiSpedizione} onChiudi={() => setMostraForm(false)} />
         )}
 
         <div className="table-wrapper">
           <table className="spedizioni-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Cliente</th>
-                <th>Corriere</th>
-                <th>Tracking</th>
-                <th>Stato</th>
-                <th>Data</th>
+                <th>ID</th><th>Cliente</th><th>Corriere</th><th>Tracking</th><th>Stato</th><th>Data</th>
                 {ruolo === 'mittente' && <th></th>}
               </tr>
             </thead>
