@@ -43,7 +43,6 @@ function Registrazione() {
       return;
     }
 
-    // Registrazione con Supabase
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
@@ -72,97 +71,64 @@ function Registrazione() {
 
   if (success) {
     return (
-      <div className="registrazione-container">
-        <div className="registrazione-box">
-          <h1 className="registrazione-logo">TrackFlow</h1>
-          <div className="success-message">
-            <span className="success-icon">✅</span>
-            <h2>Registrazione completata!</h2>
-            <p>Controlla la tua email per verificare l'account.</p>
-            <p className="redirect-text">Verrai reindirizzato al login...</p>
+      <>
+        <div className="registrazione-container">
+          <div className="registrazione-box">
+            <h1 className="registrazione-logo">TrackFlow</h1>
+            <div className="success-message">
+              <span className="success-icon">✅</span>
+              <h2>Registrazione completata!</h2>
+              <p>Controlla la tua email per verificare l'account.</p>
+              <p className="redirect-text">Verrai reindirizzato al login...</p>
+            </div>
           </div>
         </div>
-      </div>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <div className="registrazione-container">
-      <div className="registrazione-box">
-        <h1 className="registrazione-logo">TrackFlow</h1>
-        <p className="registrazione-subtitle">Registra la tua azienda</p>
+    <>
+      <div className="registrazione-container">
+        <div className="registrazione-box">
+          <h1 className="registrazione-logo">TrackFlow</h1>
+          <p className="registrazione-subtitle">Registra la tua azienda</p>
 
-        {error && <div className="error-message">{error}</div>}
+          {error && <div className="error-message">{error}</div>}
 
-        <form className="registrazione-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="nomeAzienda">Nome azienda *</label>
-            <input
-              type="text"
-              id="nomeAzienda"
-              name="nomeAzienda"
-              value={formData.nomeAzienda}
-              onChange={handleChange}
-              placeholder="Nome della tua azienda"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="email">Email *</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="nome@azienda.it"
-              required
-            />
-          </div>
-
-          <div className="form-row">
+          <form className="registrazione-form" onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="password">Password *</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Minimo 6 caratteri"
-                required
-              />
+              <label htmlFor="nomeAzienda">Nome azienda *</label>
+              <input type="text" id="nomeAzienda" name="nomeAzienda" value={formData.nomeAzienda} onChange={handleChange} placeholder="Nome della tua azienda" required />
             </div>
             <div className="form-group">
-              <label htmlFor="confermaPassword">Conferma password *</label>
-              <input
-                type="password"
-                id="confermaPassword"
-                name="confermaPassword"
-                value={formData.confermaPassword}
-                onChange={handleChange}
-                placeholder="Ripeti la password"
-                required
-              />
+              <label htmlFor="email">Email *</label>
+              <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} placeholder="nome@azienda.it" required />
             </div>
-          </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="password">Password *</label>
+                <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} placeholder="Minimo 6 caratteri" required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="confermaPassword">Conferma password *</label>
+                <input type="password" id="confermaPassword" name="confermaPassword" value={formData.confermaPassword} onChange={handleChange} placeholder="Ripeti la password" required />
+              </div>
+            </div>
+            <button type="submit" className="registrazione-button" disabled={loading}>
+              {loading ? 'Registrazione in corso...' : 'Registra azienda'}
+            </button>
+          </form>
 
-          <button type="submit" className="registrazione-button" disabled={loading}>
-            {loading ? 'Registrazione in corso...' : 'Registra azienda'}
-          </button>
-        </form>
-
-        <p className="registrazione-login">
-          Hai già un account?{' '}
-          <span onClick={() => navigate('/')} className="link">
-            Accedi
-          </span>
-        </p>
+          <p className="registrazione-login">
+            Hai già un account?{' '}
+            <span onClick={() => navigate('/')} className="link">Accedi</span>
+          </p>
+        </div>
       </div>
-
       <Footer />
-    </div>
+    </>
   );
 }
 
