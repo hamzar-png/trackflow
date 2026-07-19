@@ -38,9 +38,10 @@ console.log('GLS API response:', JSON.stringify(data).substring(0, 500));
       });
     }
 
-    return res.status(200).json({
+       return res.status(200).json({
       success: true,
       tracking: trackingNumber,
+      rawResponse: JSON.stringify(data).substring(0, 2000),
       events: events.length > 0 ? events : [],
     });
   } catch (error) {
