@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/aggiorna-tracking",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
