@@ -113,7 +113,10 @@
   background: #6ee7b7;
 }
 
-.gestione-table-wrapper {
+.table-wrapper {
+  background: transparent;
+  border-radius: 12px;
+  border: 1px solid #334155;
   overflow-x: auto;
 }
 
@@ -149,4 +152,20 @@
 
 .gestione-elimina-btn:hover {
   background: #450a0a;
+}
+.spedizioni-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(30, 41, 59, 0.85); /* Era #1e293b, ora semi-trasparente */
+}
+.spedizioni-table th {
+  background: rgba(15, 23, 42, 0.9); /* Era #0f172a */
+}
+
+.spedizioni-table tbody tr {
+  background: transparent;
+}
+
+.spedizioni-table tbody tr:hover {
+  background: rgba(38, 51, 72, 0.7); /* Era #263348 */
 }

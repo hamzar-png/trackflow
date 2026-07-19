@@ -49,7 +49,7 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
           backgroundSize: '50%',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          opacity: 0.10,
+          opacity: 0.15,
           zIndex: 0,
           pointerEvents: 'none',
         }} />
