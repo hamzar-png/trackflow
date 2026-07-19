@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     );
 
     const data = await response.json();
-
+console.log('GLS API response:', JSON.stringify(data).substring(0, 500));
     // Estrai gli eventi
     const events = [];
     const tuStatus = data?.tuStatus || [];
