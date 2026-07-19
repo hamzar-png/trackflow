@@ -93,14 +93,32 @@ function GestioneDestinatari() {
 
   if (loading) return <p style={{ color: '#94a3b8', padding: '20px' }}>Caricamento...</p>;
 
-  return (
-    <div className="gestione-container">
-      <div className="gestione-header">
-        <h3>Gestione Destinatari</h3>
-        <p className="gestione-subtitle">
-          Crea account per i tuoi clienti. Useranno username e password per accedere.
-        </p>
+  rreturn (
+    <div className="gestione-container" style={{ maxWidth: '900px', margin: '40px auto', padding: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div className="gestione-header">
+          <h3>Gestione Destinatari</h3>
+          <p className="gestione-subtitle">
+            Crea account per i tuoi clienti. Useranno username e password per accedere.
+          </p>
+        </div>
+        <button 
+          onClick={() => window.location.href = '/dashboard'}
+          style={{
+            background: '#0f172a',
+            color: '#38bdf8',
+            border: '1px solid #38bdf8',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '0.85rem'
+          }}
+        >
+          ← Torna alla dashboard
+        </button>
       </div>
+
+      {/* ... resto del contenuto uguale ... */}
 
       <button className="gestione-add-btn" onClick={() => { setMostraForm(!mostraForm); setError(''); setSuccess(''); }}>
         {mostraForm ? '✕ Chiudi' : '+ Nuovo destinatario'}

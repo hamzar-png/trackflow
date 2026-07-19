@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 import NuovaSpedizione from './NuovaSpedizione';
-import GestioneDestinatari from './GestioneDestinatari';
 import Impostazioni from './Impostazioni';
 import Footer from '../components/Footer';
 
@@ -87,15 +86,16 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             
-            {ruolo === 'mittente' && (
-              <button className="nuova-spedizione-button" onClick={() => setMostraForm(!mostraForm)}>
-                {mostraForm ? '✕ Chiudi' : '+ Nuova spedizione'}
-              </button>
-            )}
-          </div>
+          {ruolo === 'mittente' && (
+  <button 
+    className="nuova-spedizione-button" 
+    onClick={() => navigate('/destinatari')}
+    style={{ background: '#0f172a', color: '#38bdf8', border: '1px solid #38bdf8' }}
+  >
+    👥 Gestione Destinatari
+  </button>
+)}
         </div>
-
-        {ruolo === 'mittente' && <GestioneDestinatari />}
 
         {mostraForm && (
           <NuovaSpedizione
