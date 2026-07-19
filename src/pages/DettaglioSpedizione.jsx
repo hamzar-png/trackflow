@@ -15,7 +15,6 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
 
   const spedizione = spedizioni.find(s => s.tracking_id === trackingId);
 
-  // Tracciamento GLS
   useEffect(() => {
     if (spedizione && spedizione.corriere === 'GLS' && spedizione.tracking) {
       const trackingNumber = spedizione.tracking.replace('AK', '');
@@ -24,9 +23,7 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
         fetch(`/api/tracciamento-gls?trackingNumber=${trackingNumber}`)
           .then(r => r.json())
           .then(data => {
-            if (data.success) {
-              setTrackingData(data.events);
-            }
+            if (data.success) setTrackingData(data);
           })
           .catch(console.error)
           .finally(() => setLoadingTracking(false));
@@ -34,19 +31,10 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
     }
   }, [spedizione]);
 
-  // Resetta ddtUrl quando cambia spedizione
-  useEffect(() => {
-    setDdtUrl('');
-    setInModifica(false);
-  }, [trackingId]);
+  useEffect(() => { setDdtUrl(''); setInModifica(false); }, [trackingId]);
 
-  // Carica il ddtUrl dalla spedizione corrente
   useEffect(() => {
-    if (spedizione?.ddt_url) {
-      setDdtUrl(spedizione.ddt_url);
-    } else {
-      setDdtUrl('');
-    }
+    setDdtUrl(spedizione?.ddt_url || '');
   }, [spedizione]);
 
   if (!spedizione) {
@@ -80,11 +68,7 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
   };
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const handleSalva = () => {
-    onModifica(spedizione.tracking_id, formData);
-    setInModifica(false);
-  };
+  const handleSalva = () => { onModifica(spedizione.tracking_id, formData); setInModifica(false); };
 
   const dettaglioExtra = {
     contatto: 'Contatto cliente', email: 'cliente@esempio.it',
@@ -128,23 +112,38 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
         <div className="info-card"><h3>Posizione attuale</h3><p className="info-value posizione">{dettaglioExtra.posizione}</p><p className="info-label">Note</p>{inModifica ? <textarea name="note" value={formData.note} onChange={handleChange} className="edit-input" rows={2} /> : <p className="info-sub">{dettaglioExtra.note}</p>}</div>
       </div>
 
+      {/* TRACCIAMENTO REALE */}
       <div className="timeline-card">
         <h3>Tracciamento reale</h3>
         {loadingTracking ? (
-          <p style={{ color: '#94a3b8' }}>Caricamento tracciamento...</p>
-        ) : trackingData && trackingData.length > 0 ? (
-          <div className="timeline">
-            {trackingData.map((event, index) => (
-              <div key={index} className="timeline-item">
-                <div className="timeline-dot"></div>
-                <div className="timeline-content">
-                  <p className="timeline-data">{event.data}</p>
-                  <p className="timeline-stato">{event.stato}</p>
-                  {event.luogo && <p className="timeline-luogo" style={{ fontSize: '0.75rem', color: '#64748b' }}>{event.luogo}</p>}
+          <p style={{ color: '#94a3b8' }}>Caricamento...</p>
+        ) : trackingData?.events?.length > 0 ? (
+          <>
+            <div style={{ background: '#0f172a', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', border: '1px solid #334155' }}>
+              <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Stato attuale: </span>
+              <span style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '0.85rem' }}>{trackingData.statoAttuale || 'In elaborazione'}</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+              {trackingData.references?.map((ref, i) => (
+                <div key={i} style={{ background: '#0f172a', padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155' }}>
+                  <span style={{ color: '#64748b', fontSize: '0.65rem' }}>{ref.tipo}: </span>
+                  <span style={{ color: '#cbd5e1', fontSize: '0.8rem', fontWeight: 'bold' }}>{ref.valore}</span>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <div className="timeline">
+              {trackingData.events.map((event, index) => (
+                <div key={index} className="timeline-item">
+                  <div className="timeline-dot" style={{ background: index === 0 ? '#fbbf24' : '#38bdf8' }}></div>
+                  <div className="timeline-content">
+                    <p className="timeline-data">{event.data}</p>
+                    <p className="timeline-stato">{event.stato}</p>
+                    {event.luogo && <p style={{ fontSize: '0.7rem', color: '#64748b' }}>📍 {event.luogo}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           <div className="timeline">
             {dettaglioExtra.aggiornamenti.map((agg, index) => (
@@ -181,13 +180,9 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
                     const reader = new FileReader();
                     reader.onload = async () => {
                       const base64 = reader.result.split(',')[1];
-                      const response = await fetch('/api/upload-ddt', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'upload', trackingId: spedizione.tracking_id, userId: user.id, fileData: base64, fileName: file.name })
-                      });
-                      const result = await response.json();
-                      if (result.error) { alert('Errore: ' + result.error); }
+                      const r = await fetch('/api/upload-ddt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'upload', trackingId: spedizione.tracking_id, userId: user.id, fileData: base64, fileName: file.name }) });
+                      const result = await r.json();
+                      if (result.error) alert('Errore: ' + result.error);
                       else { setDdtUrl(result.url); alert('✅ DDT caricato!'); }
                     };
                     reader.readAsDataURL(file);
@@ -200,13 +195,9 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
                   <button onClick={async () => {
                     if (!window.confirm('Eliminare il DDT?')) return;
                     const { data: { user } } = await supabase.auth.getUser();
-                    const response = await fetch('/api/upload-ddt', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ action: 'delete', trackingId: spedizione.tracking_id, userId: user.id })
-                    });
-                    const result = await response.json();
-                    if (result.error) { alert('Errore: ' + result.error); }
+                    const r = await fetch('/api/upload-ddt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', trackingId: spedizione.tracking_id, userId: user.id }) });
+                    const result = await r.json();
+                    if (result.error) alert('Errore: ' + result.error);
                     else { setDdtUrl(''); alert('DDT eliminato!'); }
                   }} className="azione-btn ddt-delete">🗑️ Elimina DDT</button>
                 </>
@@ -218,9 +209,7 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
 
       {ruolo === 'destinatario' && ddtUrl && (
         <div className="dettaglio-actions">
-          <button onClick={() => window.open(ddtUrl, '_blank')} className="azione-btn ddt-view">
-            👁️ Vedi DDT
-          </button>
+          <button onClick={() => window.open(ddtUrl, '_blank')} className="azione-btn ddt-view">👁️ Vedi DDT</button>
         </div>
       )}
 
