@@ -10,8 +10,29 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
   const [inModifica, setInModifica] = useState(false);
   const [formData, setFormData] = useState({});
   const [ddtUrl, setDdtUrl] = useState('');
+  const [trackingData, setTrackingData] = useState(null);
+  const [loadingTracking, setLoadingTracking] = useState(false);
 
   const spedizione = spedizioni.find(s => s.tracking_id === trackingId);
+
+  // Tracciamento GLS
+  useEffect(() => {
+    if (spedizione && spedizione.corriere === 'GLS' && spedizione.tracking) {
+      const trackingNumber = spedizione.tracking.replace('AK', '');
+      if (trackingNumber) {
+        setLoadingTracking(true);
+        fetch(`/api/tracciamento-gls?trackingNumber=${trackingNumber}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              setTrackingData(data.events);
+            }
+          })
+          .catch(console.error)
+          .finally(() => setLoadingTracking(false));
+      }
+    }
+  }, [spedizione]);
 
   // Resetta ddtUrl quando cambia spedizione
   useEffect(() => {
@@ -108,12 +129,35 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
       </div>
 
       <div className="timeline-card">
-        <h3>Cronologia aggiornamenti</h3>
-        <div className="timeline">
-          {dettaglioExtra.aggiornamenti.map((agg, index) => (
-            <div key={index} className="timeline-item"><div className="timeline-dot"></div><div className="timeline-content"><p className="timeline-data">{agg.data}</p><p className="timeline-stato">{agg.stato}</p></div></div>
-          ))}
-        </div>
+        <h3>Tracciamento reale</h3>
+        {loadingTracking ? (
+          <p style={{ color: '#94a3b8' }}>Caricamento tracciamento...</p>
+        ) : trackingData && trackingData.length > 0 ? (
+          <div className="timeline">
+            {trackingData.map((event, index) => (
+              <div key={index} className="timeline-item">
+                <div className="timeline-dot"></div>
+                <div className="timeline-content">
+                  <p className="timeline-data">{event.data}</p>
+                  <p className="timeline-stato">{event.stato}</p>
+                  {event.luogo && <p className="timeline-luogo" style={{ fontSize: '0.75rem', color: '#64748b' }}>{event.luogo}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="timeline">
+            {dettaglioExtra.aggiornamenti.map((agg, index) => (
+              <div key={index} className="timeline-item">
+                <div className="timeline-dot"></div>
+                <div className="timeline-content">
+                  <p className="timeline-data">{agg.data}</p>
+                  <p className="timeline-stato">{agg.stato}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {ruolo === 'mittente' && (
