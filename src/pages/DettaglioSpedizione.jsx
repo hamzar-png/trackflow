@@ -3,7 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import './DettaglioSpedizione.css';
 import Footer from '../components/Footer';
+import { createClient } from '@supabase/supabase-js';
 
+const supabaseAdmin = createClient(
+  'https://wogthnhzdzgblqghwvja.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZ3Robmh6ZHpnYmxxZ2h3dmphIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4Mzc3NjgyNSwiZXhwIjoyMDk5MzUyODI1fQ.P05KHCAjHwQ9OkT-GTuLp8_85FtM_1A0LANX7dwdUa4' // ← SOSTITUISCI con la tua service_role key completa
+);
 function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
   const { trackingId } = useParams();
   const navigate = useNavigate();
@@ -218,10 +223,10 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
                     if (!file) return;
                     const { data: { user } } = await supabase.auth.getUser();
                     const filePath = `${user.id}/${spedizione.tracking_id}_DDT.pdf`;
-                    const { error } = await supabase.storage.from('ddt').upload(filePath, file, { upsert: true });
+                    const { error } = await supabaseAdmin.storage.from('ddt').upload(filePath, file, { upsert: true });
                     if (error) { alert('Errore: ' + error.message); return; }
                     const publicUrl = `https://wogthnhzdzgblqghwvja.supabase.co/storage/v1/object/public/ddt/${user.id}/${spedizione.tracking_id}_DDT.pdf`;
-                    const { error: updateError } = await supabase.from('spedizioni').update({ ddt_url: publicUrl }).eq('tracking_id', spedizione.tracking_id);
+                    const { error: updateError } = await supabaseAdmin.from('spedizioni').update({ ddt_url: publicUrl }).eq('tracking_id', spedizione.tracking_id);
                     if (updateError) { alert('Errore: ' + updateError.message); }
                     else { setDdtUrl(publicUrl); alert('✅ DDT caricato!'); }
                   }}
@@ -234,8 +239,8 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
   if (!window.confirm('Eliminare il DDT?')) return;
   const { data: { user } } = await supabase.auth.getUser();
   const filePath = `${user.id}/${spedizione.tracking_id}_DDT.pdf`;
-  await supabase.storage.from('ddt').remove([filePath]);
-  await supabase.from('spedizioni').update({ ddt_url: null }).eq('tracking_id', spedizione.tracking_id);
+  await supabaseAdmin.storage.from('ddt').remove([filePath]);
+  await supabaseAdmin.from('spedizioni').update({ ddt_url: null }).eq('tracking_id', spedizione.tracking_id);
   // Aggiorna sia lo stato locale che l'oggetto spedizione
   setDdtUrl('');
   spedizione.ddt_url = null;
