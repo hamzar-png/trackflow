@@ -25,24 +25,40 @@ export default async function handler(req, res) {
     );
 
     const data = await response.json();
-console.log('GLS API response:', JSON.stringify(data).substring(0, 500));
-    // Estrai gli eventi
+    const tuStatus = data?.tuStatus?.[0] || {};
+
+    // Estrai la history degli eventi
     const events = [];
-    const tuStatus = data?.tuStatus || [];
+    const history = tuStatus.history || [];
     
-    for (const status of tuStatus) {
+    for (const h of history) {
       events.push({
-        data: status.evtDate || '',
-        stato: status.description || status.status || '',
-        luogo: status.city || status.address || '',
+        data: h.date + ' ' + (h.time || '00:00'),
+        ora: h.time || '',
+        stato: h.evtDscr || '',
+        luogo: h.address?.city || '',
       });
     }
 
-       return res.status(200).json({
+    // Stato attuale
+    const progressBar = tuStatus.progressBar || {};
+    const currentStatus = progressBar.statusText || '';
+    const statusInfo = progressBar.statusInfo || '';
+
+    // Dettagli spedizione
+    const references = tuStatus.references || [];
+    const addresses = tuStatus.addresses || [];
+    const infos = tuStatus.infos || [];
+
+    return res.status(200).json({
       success: true,
       tracking: trackingNumber,
-      rawResponse: JSON.stringify(data).substring(0, 2000),
-      events: events.length > 0 ? events : [],
+      statoAttuale: currentStatus || statusInfo,
+      progressBar: progressBar.statusBar || [],
+      references: references.map(r => ({ tipo: r.name, valore: r.value })),
+      addresses: addresses.map(a => ({ tipo: a.name, valore: a.value?.name1 || '' })),
+      infos: infos.map(i => ({ tipo: i.name, valore: i.value })),
+      events: events,
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
