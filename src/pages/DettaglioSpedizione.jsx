@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import './DettaglioSpedizione.css';
@@ -13,9 +13,20 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
 
   const spedizione = spedizioni.find(s => s.tracking_id === trackingId);
 
-  if (spedizione && spedizione.ddt_url && !ddtUrl) {
-    setDdtUrl(spedizione.ddt_url);
-  }
+  // Resetta ddtUrl quando cambia spedizione
+  useEffect(() => {
+    setDdtUrl('');
+    setInModifica(false);
+  }, [trackingId]);
+
+  // Carica il ddtUrl dalla spedizione corrente
+  useEffect(() => {
+    if (spedizione?.ddt_url) {
+      setDdtUrl(spedizione.ddt_url);
+    } else {
+      setDdtUrl('');
+    }
+  }, [spedizione]);
 
   if (!spedizione) {
     return (
@@ -139,9 +150,9 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
                   }}
                 />
               </label>
-              {(ddtUrl || spedizione.ddt_url) && (
+              {ddtUrl && (
                 <>
-                  <button onClick={() => window.open(ddtUrl || spedizione.ddt_url, '_blank')} className="azione-btn ddt-view">👁️ Vedi DDT</button>
+                  <button onClick={() => window.open(ddtUrl, '_blank')} className="azione-btn ddt-view">👁️ Vedi DDT</button>
                   <button onClick={async () => {
                     if (!window.confirm('Eliminare il DDT?')) return;
                     const { data: { user } } = await supabase.auth.getUser();
@@ -152,22 +163,18 @@ function DettaglioSpedizione({ spedizioni, onElimina, onModifica, ruolo }) {
                     });
                     const result = await response.json();
                     if (result.error) { alert('Errore: ' + result.error); }
-                    else { setDdtUrl(''); spedizione.ddt_url = null; alert('DDT eliminato!'); }
+                    else { setDdtUrl(''); alert('DDT eliminato!'); }
                   }} className="azione-btn ddt-delete">🗑️ Elimina DDT</button>
                 </>
               )}
             </>
           )}
         </div>
-            )}
+      )}
 
-      {/* Sezione DDT per il destinatario (solo visualizzazione) */}
-      {ruolo === 'destinatario' && (spedizione.ddt_url || ddtUrl) && (
+      {ruolo === 'destinatario' && ddtUrl && (
         <div className="dettaglio-actions">
-          <button 
-            onClick={() => window.open(ddtUrl || spedizione.ddt_url, '_blank')} 
-            className="azione-btn ddt-view"
-          >
+          <button onClick={() => window.open(ddtUrl, '_blank')} className="azione-btn ddt-view">
             👁️ Vedi DDT
           </button>
         </div>
