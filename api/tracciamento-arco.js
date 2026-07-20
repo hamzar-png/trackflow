@@ -20,27 +20,37 @@ export default async function handler(req, res) {
       }
     );
 
-    const text = await response.text();
+    const data = await response.json();
 
-    // Prova a fare parsing JSON
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      return res.status(200).json({
-        success: false,
-        message: 'Risposta non JSON',
-        raw: text.substring(0, 500),
+    // Estrai dati spedizione
+    const tracking = data?.arTracking?.[0] || {};
+
+    // Estrai eventi
+    const events = [];
+    const details = data?.arTrackingDetails || [];
+
+    for (const d of details) {
+      events.push({
+        data: d.dataEvento + ' ' + (d.oraEvento || '00:00'),
+        stato: d.descrizioneEvento || '',
+        codice: d.codEvento || '',
       });
     }
 
     return res.status(200).json({
       success: true,
       tracking: trackingNumber,
-      rawResponse: JSON.stringify(data).substring(0, 1500),
-      events: [],
+      info: {
+        mittente: tracking.ragioneSocialeMittente || '',
+        destinatario: tracking.ragioneSocialeDestinatario || '',
+        colli: tracking.numeroColli || '',
+        peso: tracking.peso || '',
+        ddt: tracking.riferimentoCliente || '',
+        stato: tracking.noteStato || tracking.ultimoStato || '',
+      },
+      events: events,
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message, stack: error.stack?.substring(0, 300) });
+    return res.status(500).json({ error: error.message });
   }
 }
