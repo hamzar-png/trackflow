@@ -118,6 +118,26 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
                   {ruolo === 'mittente' && (
                     <td>
                       <button className="elimina-btn" onClick={(e) => { e.stopPropagation(); if (window.confirm(`Eliminare la spedizione ${spedizione.tracking_id}?`)) { onEliminaSpedizione(spedizione.tracking_id); } }} title="Elimina spedizione">🗑️</button>
+                      {ruolo === 'mittente' && (
+  <button className="nuova-spedizione-button"
+    onClick={async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: imp } = await supabase.from('impostazioni').select('arco_username, arco_password').eq('user_id', user.id).single();
+      if (!imp?.arco_username) { alert('Inserisci credenziali Arco in ⚙️ Impostazioni'); return; }
+      const res = await fetch('/api/import-arco', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: imp.arco_username, password: imp.arco_password, user_id: user.id })
+      });
+      const data = await res.json();
+      if (data.error) { alert('Errore: ' + data.error); }
+      else { alert(`Importate ${data.spedizioni?.length || 0} spedizioni!`); window.location.reload(); }
+    }}
+    style={{ background: '#0f172a', color: '#f59e0b', border: '1px solid #f59e0b' }}
+  >
+    📥 Importa da Arco
+  </button>
+)}
                     </td>
                   )}
                 </tr>
