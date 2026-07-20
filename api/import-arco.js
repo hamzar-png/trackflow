@@ -9,11 +9,16 @@ export default async function handler(req, res) {
     }
 
     // Step 1: Login per ottenere il token
-    const loginRes = await fetch('https://webservices.arcospedizioni.it/api/Login/GeneraNuovoToken/' + username, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: password }),
-    });
+  // Login Arco
+const loginRes = await fetch('https://webservices.arcospedizioni.it/api/Login/Login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ 
+    username: username,  // email
+    password: password,
+    appId: 1 
+  }),
+});
 
     if (!loginRes.ok) {
       return res.status(401).json({ error: 'Login Arco fallito' });

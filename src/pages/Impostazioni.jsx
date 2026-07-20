@@ -101,7 +101,8 @@ function Impostazioni({ onClose }) {
             <h3>📦 Account Arco Spedizioni</h3>
             <p className="imp-desc">Inserisci le credenziali del portale Arco.</p>
             <div className="imp-row">
-              <div className="imp-group"><label>Username / Codice cliente</label><input type="text" value={arcoUsername} onChange={(e) => setArcoUsername(e.target.value)} placeholder="es. 069077" /></div>
+              <div className="imp-group"><label>Email</label>
+<input type="email" value={arcoUsername} onChange={(e) => setArcoUsername(e.target.value)} placeholder="es. nome@azienda.it" /></div>
               <div className="imp-group"><label>Password</label><input type="password" value={arcoPassword} onChange={(e) => setArcoPassword(e.target.value)} placeholder="Password Arco" /></div>
             </div>
           </div>
