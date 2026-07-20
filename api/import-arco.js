@@ -28,11 +28,25 @@ export default async function handler(req, res) {
     const today = new Date().toISOString().split('T')[0];
     const lastWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    const trackingRes = await fetch('https://webservices.arcospedizioni.it/api/ArTrackings/GetTracking', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': token },
-      body: JSON.stringify({ dataPartenza: lastWeek, dataFinale: today, statoSpedizione: 'TUTTI', porto: 'TUTTI', codiceCliente: 'TUTTI', nazioneDestinatario: 'TUTTI' }),
-    });
+   const trackingRes = await fetch('https://webservices.arcospedizioni.it/api/ArTrackings/GetTracking', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'Authorization': token },
+  body: JSON.stringify({
+    dataPartenza: lastWeek,
+    dataFinale: today,
+    statoSpedizione: 'TUTTI',
+    porto: 'TUTTI',
+    codiceCliente: 'TUTTI',
+    nazioneDestinatario: 'TUTTI',
+    numeroDdt: '',
+    localitaDestino: '',
+    provinciaDestino: '',
+    ragioneSocialeDestinatario: '',
+    contrassegno: 0,
+    codice: '',
+    NumeroSpedizione: '',
+  }),
+});
 
     if (!trackingRes.ok) {
       const errText = await trackingRes.text();
