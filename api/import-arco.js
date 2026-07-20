@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  
+
   try {
     const { username, password, user_id } = req.body || {};
 
@@ -8,17 +8,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Credenziali mancanti' });
     }
 
-    // Step 1: Login per ottenere il token
-  // Login Arco
-const loginRes = await fetch('https://webservices.arcospedizioni.it/api/Login/Login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ 
-    username: username,  // email
-    password: password,
-    appId: 1 
-  }),
-});
+    const loginRes = await fetch('https://webservices.arcospedizioni.it/api/Login/Login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, appId: 1 }),
+    });
 
     if (!loginRes.ok) {
       return res.status(401).json({ error: 'Login Arco fallito' });
@@ -31,28 +25,18 @@ const loginRes = await fetch('https://webservices.arcospedizioni.it/api/Login/Lo
       return res.status(401).json({ error: 'Token non ricevuto' });
     }
 
-    // Step 2: Recupera tutte le spedizioni recenti
     const today = new Date().toISOString().split('T')[0];
     const lastWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     const trackingRes = await fetch('https://webservices.arcospedizioni.it/api/ArTrackings/GetTracking', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token,
-      },
-      body: JSON.stringify({
-        dataPartenza: lastWeek,
-        dataFinale: today,
-        statoSpedizione: 'TUTTI',
-        porto: 'TUTTI',
-        codiceCliente: 'TUTTI',
-        nazioneDestinatario: 'TUTTI',
-      }),
+      headers: { 'Content-Type': 'application/json', 'Authorization': token },
+      body: JSON.stringify({ dataPartenza: lastWeek, dataFinale: today, statoSpedizione: 'TUTTI', porto: 'TUTTI', codiceCliente: 'TUTTI', nazioneDestinatario: 'TUTTI' }),
     });
 
     if (!trackingRes.ok) {
-      return res.status(500).json({ error: 'Errore recupero spedizioni' });
+      const errText = await trackingRes.text();
+      return res.status(500).json({ error: 'Errore recupero: ' + errText.substring(0, 200) });
     }
 
     const spedizioni = await trackingRes.json();
