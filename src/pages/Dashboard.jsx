@@ -62,7 +62,7 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
                     if (data.error) { alert('Errore: ' + data.error); }
                    else { 
   alert(`Importate ${data.spedizioni?.length || 0} spedizioni!`); 
-  window.location.href = '/dashboard';
+  window.location.reload();
 }
                   }}
                   style={{ background: '#0f172a', color: '#f59e0b', border: '1px solid #f59e0b' }}>
