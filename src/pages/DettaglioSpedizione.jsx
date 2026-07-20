@@ -38,21 +38,30 @@ useEffect(() => {
     }
   }
 }, [spedizione]);
-  useEffect(() => {
-    if (spedizione && spedizione.corriere === 'GLS' && spedizione.tracking) {
-      const trackingNumber = spedizione.tracking.replace('AK', '');
-      if (trackingNumber) {
-        setLoadingTracking(true);
-        fetch(`/api/tracciamento-gls?trackingNumber=${trackingNumber}`)
-          .then(r => r.json())
-          .then(data => {
-            if (data.success) setTrackingData(data);
-          })
-          .catch(console.error)
-          .finally(() => setLoadingTracking(false));
-      }
+ // Tracciamento GLS e Arco
+useEffect(() => {
+  if (spedizione && spedizione.tracking) {
+    const trackingNumber = spedizione.tracking;
+    let apiUrl = '';
+
+    if (spedizione.corriere === 'GLS') {
+      apiUrl = `/api/tracciamento-gls?trackingNumber=${trackingNumber.replace('AK', '')}`;
+    } else if (spedizione.corriere === 'Arco') {
+      apiUrl = `/api/tracciamento-arco?trackingNumber=${trackingNumber}`;
     }
-  }, [spedizione]);
+
+    if (apiUrl) {
+      setLoadingTracking(true);
+      fetch(apiUrl)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) setTrackingData(data);
+        })
+        .catch(console.error)
+        .finally(() => setLoadingTracking(false));
+    }
+  }
+}, [spedizione]);
 
   useEffect(() => { setDdtUrl(''); setInModifica(false); }, [trackingId]);
 
