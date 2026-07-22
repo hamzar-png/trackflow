@@ -22,11 +22,12 @@ export default async function handler(req, res) {
     const html = await response.text();
 
     return res.status(200).json({
-      success: true,
-      tracking: trackingNumber,
-      htmlPreview: html.substring(0, 5000),
-      events: [],
-    });
+  success: true,
+  tracking: trackingNumber,
+  htmlPreview: html.substring(html.length - 3000, html.length),
+  htmlLength: html.length,
+  events: [],
+});
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
