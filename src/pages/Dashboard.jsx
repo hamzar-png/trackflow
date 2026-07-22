@@ -47,7 +47,7 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
             <h2>Le tue spedizioni</h2>
             <p className="dashboard-subtitle">Monitora in tempo reale tutte le spedizioni dei tuoi clienti</p>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {ruolo === 'mittente' && (
               <>
                 <button className="nuova-spedizione-button" onClick={() => setMostraForm(!mostraForm)}>{mostraForm ? '✕ Chiudi' : '+ Nuova spedizione'}</button>
@@ -59,26 +59,24 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
                     if (!imp?.arco_username) { alert('Inserisci credenziali Arco in ⚙️ Impostazioni'); return; }
                     const res = await fetch('/api/import-arco', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: imp.arco_username, password: imp.arco_password, user_id: user.id }) });
                     const data = await res.json();
-                    if (data.error) { alert('Errore: ' + data.error); }
-                  else { 
-  alert(`Importate ${data.spedizioni?.length || 0} spedizioni! Ricarica la pagina per vederle.`); 
-}
+                    if (data.error) alert('Errore: ' + data.error);
+                    else alert(`Importate ${data.spedizioni?.length || 0} spedizioni Arco! Ricarica la pagina.`);
                   }}
                   style={{ background: '#0f172a', color: '#f59e0b', border: '1px solid #f59e0b' }}>
                   📥 Importa da Arco
-                  <button className="nuova-spedizione-button"
-  onClick={async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { data: imp } = await supabase.from('impostazioni').select('susa_username, susa_password').eq('user_id', user.id).single();
-    if (!imp?.susa_username) { alert('Inserisci credenziali SUSA in ⚙️ Impostazioni'); return; }
-    const res = await fetch('/api/import-susa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: imp.susa_username, password: imp.susa_password, user_id: user.id }) });
-    const data = await res.json();
-    if (data.error) { alert('Errore: ' + data.error); }
-    else { alert(`Importate ${data.importate} spedizioni SUSA!`); }
-  }}
-  style={{ background: '#0f172a', color: '#f59e0b', border: '1px solid #f59e0b' }}>
-  📥 Importa da SUSA
-</button>
+                </button>
+                <button className="nuova-spedizione-button"
+                  onClick={async () => {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    const { data: imp } = await supabase.from('impostazioni').select('susa_username, susa_password').eq('user_id', user.id).single();
+                    if (!imp?.susa_username) { alert('Inserisci credenziali SUSA in ⚙️ Impostazioni'); return; }
+                    const res = await fetch('/api/import-susa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: imp.susa_username, password: imp.susa_password, user_id: user.id }) });
+                    const data = await res.json();
+                    if (data.error) alert('Errore: ' + data.error);
+                    else alert(`Importate ${data.importate || 0} spedizioni SUSA! Ricarica la pagina.`);
+                  }}
+                  style={{ background: '#0f172a', color: '#f59e0b', border: '1px solid #f59e0b' }}>
+                  📥 Importa da SUSA
                 </button>
               </>
             )}
