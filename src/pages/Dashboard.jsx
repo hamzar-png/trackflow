@@ -66,6 +66,19 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
                   }}
                   style={{ background: '#0f172a', color: '#f59e0b', border: '1px solid #f59e0b' }}>
                   📥 Importa da Arco
+                  <button className="nuova-spedizione-button"
+  onClick={async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: imp } = await supabase.from('impostazioni').select('susa_username, susa_password').eq('user_id', user.id).single();
+    if (!imp?.susa_username) { alert('Inserisci credenziali SUSA in ⚙️ Impostazioni'); return; }
+    const res = await fetch('/api/import-susa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: imp.susa_username, password: imp.susa_password, user_id: user.id }) });
+    const data = await res.json();
+    if (data.error) { alert('Errore: ' + data.error); }
+    else { alert(`Importate ${data.importate} spedizioni SUSA!`); }
+  }}
+  style={{ background: '#0f172a', color: '#f59e0b', border: '1px solid #f59e0b' }}>
+  📥 Importa da SUSA
+</button>
                 </button>
               </>
             )}

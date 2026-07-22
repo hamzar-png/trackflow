@@ -13,6 +13,8 @@ function Impostazioni({ onClose }) {
   const [loading, setLoading] = useState(true);
   const [arcoUsername, setArcoUsername] = useState('');
   const [arcoPassword, setArcoPassword] = useState('');
+  const [susaUsername, setSusaUsername] = useState('');
+const [susaPassword, setSusaPassword] = useState('');
 
   useEffect(() => {
     caricaImpostazioni();
@@ -37,6 +39,8 @@ function Impostazioni({ onClose }) {
       setApiKey(data.api_key || '');
       setArcoUsername(data.arco_username || '');
       setArcoPassword(data.arco_password || '');
+      setSusaUsername(data.susa_username || '');
+setSusaPassword(data.susa_password || '');
     }
     setLoading(false);
   };
@@ -62,6 +66,8 @@ function Impostazioni({ onClose }) {
       api_key: apiKey,
       arco_username: arcoUsername,
       arco_password: arcoPassword,
+      susa_username: susaUsername,
+susa_password: susaPassword,
     };
 
     if (esistente) {
@@ -106,6 +112,14 @@ function Impostazioni({ onClose }) {
               <div className="imp-group"><label>Password</label><input type="password" value={arcoPassword} onChange={(e) => setArcoPassword(e.target.value)} placeholder="Password Arco" /></div>
             </div>
           </div>
+          <div className="imp-section">
+  <h3>📦 Account SUSA Trasporti</h3>
+  <p className="imp-desc">Inserisci le credenziali del portale SUSA.</p>
+  <div className="imp-row">
+    <div className="imp-group"><label>Email / Username</label><input type="text" value={susaUsername} onChange={(e) => setSusaUsername(e.target.value)} placeholder="nome@azienda.it" /></div>
+    <div className="imp-group"><label>Password</label><input type="password" value={susaPassword} onChange={(e) => setSusaPassword(e.target.value)} placeholder="Password SUSA" /></div>
+  </div>
+</div>
           <div className="imp-section">
             <h3>🔑 API Key TrackFlow</h3>
             <p className="imp-desc">Usa questa chiave per collegare lo script Tampermonkey a TrackFlow.</p>
