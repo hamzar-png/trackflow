@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       tracking: trackingNumber,
-      htmlPreview: html.substring(0, 1500),
+      htmlPreview: html.substring(0, 5000),
       events: [],
     });
   } catch (error) {
