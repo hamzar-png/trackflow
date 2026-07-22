@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     const { error } = await supabase.from('spedizioni').insert([{
       tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
       cliente: destinatario || 'Da assegnare',
-      corriere: 'GLS',
+      corriere: req.body.corriere || 'GLS',
       tracking: 'AK' + tracking,
       stato: 'In transito',
       data: data || new Date().toLocaleDateString('it-IT'),
