@@ -6,7 +6,7 @@ import NuovaSpedizione from './NuovaSpedizione';
 import Impostazioni from './Impostazioni';
 import Footer from '../components/Footer';
 
-function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onEliminaSpedizione, onImportaGLS, ruolo }) {
+function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onEliminaSpedizione, onImportaGLS, onRicaricaSpedizioni, ruolo }) {
   const navigate = useNavigate();
   const [mostraForm, setMostraForm] = useState(false);
   const [mostraImpostazioni, setMostraImpostazioni] = useState(false);
@@ -61,6 +61,7 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
                     const data = await res.json();
                     if (data.error) alert('Errore: ' + data.error);
                     else alert(`Importate ${data.spedizioni?.length || 0} spedizioni Arco! Ricarica la pagina.`);
+                    if (onRicaricaSpedizioni) onRicaricaSpedizioni();
                   }}
                   style={{ background: '#0f172a', color: '#f59e0b', border: '1px solid #f59e0b' }}>
                   📥 Importa da Arco
@@ -74,6 +75,7 @@ function Dashboard({ azienda, onLogout, spedizioni, onAggiungiSpedizione, onElim
                     const data = await res.json();
                     if (data.error) alert('Errore: ' + data.error);
                     else alert(`Importate ${data.importate || 0} spedizioni SUSA! Ricarica la pagina.`);
+                    if (onRicaricaSpedizioni) onRicaricaSpedizioni();
                   }}
                   style={{ background: '#0f172a', color: '#f59e0b', border: '1px solid #f59e0b' }}>
                   📥 Importa da SUSA
