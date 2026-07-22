@@ -21,10 +21,11 @@ export default async function handler(req, res) {
 
     const html = await response.text();
 
-    return res.status(200).json({
+   const middle = Math.floor(html.length / 2);
+return res.status(200).json({
   success: true,
   tracking: trackingNumber,
-  htmlPreview: html.substring(html.length - 3000, html.length),
+  htmlPreview: html.substring(middle - 1500, middle + 1500),
   htmlLength: html.length,
   events: [],
 });
