@@ -12,22 +12,21 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const { trackingNumber } = req.query || {};
+    const { trackingNumber, userId } = req.query || {};
     if (!trackingNumber) {
       return res.status(400).json({ error: 'Tracking mancante' });
     }
 
-    // Prendi le credenziali SUSA dalle impostazioni
+    // Prendi le credenziali SUSA per questo utente
     const { data: imp } = await supabase
       .from('impostazioni')
       .select('susa_username, susa_password')
-      .not('susa_username', 'is', null)
+      .eq('user_id', userId || 'c9ac4541-e872-460c-87e7-309501a294d8')
       .single();
 
-    if (!imp) {
-      return res.status(500).json({ error: 'Credenziali SUSA non configurate' });
+    if (!imp || !imp.susa_username) {
+      return res.status(500).json({ error: 'Credenziali SUSA non configurate per questo utente' });
     }
-
     // Step 1: Login a SUSA
     const loginRes = await fetch('https://flex.susa.it/cm/pages/CommunityLoginOut.php/L/IT/login/1', {
       method: 'POST',
