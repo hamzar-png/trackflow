@@ -18,14 +18,19 @@ export default async function handler(req, res) {
     }
 
     // Prendi le credenziali SUSA per questo utente
-    const { data: imp } = await supabase
+        // Prendi le credenziali SUSA (prima riga disponibile)
+    const { data: allImp, error: queryErr } = await supabase
       .from('impostazioni')
       .select('susa_username, susa_password')
-      .eq('user_id', userId || 'c9ac4541-e872-460c-87e7-309501a294d8')
-      .single();
+      .limit(1);
+
+    const imp = allImp && allImp.length > 0 ? allImp[0] : null;
 
     if (!imp || !imp.susa_username) {
-      return res.status(500).json({ error: 'Credenziali SUSA non configurate per questo utente' });
+      return res.status(500).json({ 
+        error: 'Credenziali SUSA non configurate',
+        debug: { found: !!imp, username: imp?.susa_username }
+      });
     }
     // Step 1: Login a SUSA
     const loginRes = await fetch('https://flex.susa.it/cm/pages/CommunityLoginOut.php/L/IT/login/1', {
