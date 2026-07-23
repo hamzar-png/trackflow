@@ -19,17 +19,28 @@ export default async function handler(req, res) {
 
     // Prendi le credenziali SUSA per questo utente
         // Prendi le credenziali SUSA (prima riga disponibile)
+        // Query diretta
     const { data: allImp, error: queryErr } = await supabase
       .from('impostazioni')
-      .select('susa_username, susa_password')
+      .select('*')
       .limit(1);
+
+    console.log('Query result:', allImp);
+    console.log('Query error:', queryErr);
 
     const imp = allImp && allImp.length > 0 ? allImp[0] : null;
 
-    if (!imp || !imp.susa_username) {
+    if (!imp) {
+      return res.status(500).json({ 
+        error: 'Nessuna impostazione trovata',
+        debug: { count: allImp?.length, error: queryErr?.message }
+      });
+    }
+
+    if (!imp.susa_username) {
       return res.status(500).json({ 
         error: 'Credenziali SUSA non configurate',
-        debug: { found: !!imp, username: imp?.susa_username }
+        debug: { hasUsername: !!imp.susa_username, hasPassword: !!imp.susa_password }
       });
     }
     // Step 1: Login a SUSA
