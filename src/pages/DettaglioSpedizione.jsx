@@ -48,7 +48,10 @@ useEffect(() => {
       apiUrl = `/api/tracciamento-gls?trackingNumber=${trackingNumber.replace('AK', '')}`;
     } else if (spedizione.corriere === 'Arco') {
       apiUrl = `/api/tracciamento-arco?trackingNumber=${trackingNumber}`;
-    }
+    
+   } else if (spedizione.corriere === 'SUSA') {
+  apiUrl = `/api/tracciamento-susa-v2?trackingNumber=${trackingNumber}`;
+}
 
     if (apiUrl) {
       setLoadingTracking(true);
