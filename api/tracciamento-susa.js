@@ -12,6 +12,9 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
+        // Test connessione Supabase
+    const { data: test, error: testErr } = await supabase.from('impostazioni').select('count');
+    console.log('Test Supabase:', test, testErr);
     const { trackingNumber, userId } = req.query || {};
     if (!trackingNumber) {
       return res.status(400).json({ error: 'Tracking mancante' });
