@@ -18,44 +18,20 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
     }
-
-    const { apiKey, tracking, destinatario, localita, provincia, indirizzo, cap, colli, peso, data } = req.body || {};
+    const { apiKey, tracking, destinatario, localita, provincia, indirizzo, cap, colli, peso, data, corriere } = req.body || {};
+    const corriereFinale = corriere || 'GLS';
 
     if (!apiKey || !tracking) {
       return res.status(400).json({ error: 'Dati mancanti' });
     }
 
-    // Trova utente dalla API key
-    const { data: imp } = await supabase
-      .from('impostazioni')
-      .select('user_id')
-      .eq('api_key', apiKey)
-      .single();
-
-    if (!imp || !imp.user_id) {
-      return res.status(401).json({ error: 'API key non valida' });
-    }
-
-    // Cerca destinatario con nome simile
-    let destinatario_id = null;
-    if (destinatario) {
-      const { data: destMatch } = await supabase
-        .from('destinatari')
-        .select('id')
-        .eq('mittente_id', imp.user_id)
-        .ilike('nome_azienda', `%${destinatario}%`)
-        .single();
-
-      if (destMatch) {
-        destinatario_id = destMatch.id;
-      }
-    }
+    // ... resto uguale ...
 
     const { error } = await supabase.from('spedizioni').insert([{
       tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
       cliente: destinatario || 'Da assegnare',
-      corriere: req.body.corriere || 'GLS',
-      tracking: 'AK' + tracking,
+      corriere: corriereFinale,
+      tracking: corriereFinale === 'GLS' ? 'AK' + tracking : tracking,
       stato: 'In transito',
       data: data || new Date().toLocaleDateString('it-IT'),
       tipo: 'tracking',

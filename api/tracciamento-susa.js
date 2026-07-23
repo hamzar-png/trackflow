@@ -1,3 +1,10 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  'https://wogthnhzdzgblqghwvja.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZ3Robmh6ZHpnYmxxZ2h3dmphIiwicm9zZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4Mzc3NjgyNSwiZXhwIjoyMDk5MzUyODI1fQ.P05KHCAjHwQ9OkT-GTuLp8_85FtM_1A0LANX7dwdUa4'
+);
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -10,25 +17,80 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Tracking mancante' });
     }
 
+    // Prendi le credenziali SUSA dalle impostazioni
+    const { data: imp } = await supabase
+      .from('impostazioni')
+      .select('susa_username, susa_password')
+      .not('susa_username', 'is', null)
+      .single();
+
+    if (!imp) {
+      return res.status(500).json({ error: 'Credenziali SUSA non configurate' });
+    }
+
+    // Step 1: Login a SUSA
+    const loginRes = await fetch('https://flex.susa.it/cm/pages/CommunityLoginOut.php/L/IT/login/1', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        username: imp.susa_username,
+        password: imp.susa_password,
+        Login: 'Accedi',
+      }),
+      redirect: 'manual',
+    });
+
+    const cookies = loginRes.headers.get('set-cookie') || '';
+    if (!cookies) {
+      return res.status(500).json({ error: 'Login SUSA fallito' });
+    }
+
+    // Step 2: Chiama il dettaglio tracking
     const key = Buffer.from(trackingNumber).toString('base64');
 
-    const response = await fetch(
-      `https://flex.susa.it/FixedPages/Common/tracking/tracking_dettaglio_articoli.php/L/IT/data_ini/-1/data_fin/-1/rif_mit/-1/rif_mit2/-1/dest/-1/loc/-1/anno_form/-1/fil_form/-1/pro/-1/p_ass/-1/p_fra/-1/cod_cli/-1/codclicol/-1/anno/MjAyNg==/fil/MQ==/key/${key}/psw/-`,
+    const detailRes = await fetch(
+      `https://flex.susa.it/FixedPages/Common/tracking/tracking_bolle.php/L/IT/data_ini/-1/data_fin/-1/rif_mit/-1/rif_mit2/-1/dest/-1/loc/-1/anno_form/-1/fil/MQ==/pro/-1/p_ass/-1/p_fra/-1/anno/MjAyNg==/key/${key}/cod_cli/-1`,
       {
-        headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0' },
+        headers: { 'Cookie': cookies },
       }
     );
 
-    const html = await response.text();
+    const html = await detailRes.text();
 
-   const middle = Math.floor(html.length / 2);
-return res.status(200).json({
-  success: true,
-  tracking: trackingNumber,
-  htmlPreview: html.substring(middle - 1500, middle + 1500),
-  htmlLength: html.length,
-  events: [],
-});
+    // Estrai dati dall'HTML
+    const events = [];
+    
+    // Cerca la tabella degli stati
+    const tableMatch = html.match(/<table[^>]*class='tabella'[^>]*>([\s\S]*?)<\/table>/i);
+    if (tableMatch) {
+      const rows = tableMatch[1].match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [];
+      for (const row of rows) {
+        const tds = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+        if (tds && tds.length >= 3) {
+          const clean = (i) => tds[i] ? tds[i].replace(/<[^>]*>/g, '').trim() : '';
+          if (clean(0) && clean(1)) {
+            events.push({
+              data: clean(0),
+              stato: clean(1),
+              luogo: clean(2) || '',
+            });
+          }
+        }
+      }
+    }
+
+    // Estrai info base
+    const destinatario = (html.match(/Destinatario[^<]*<[^>]*>([^<]+)</i) || [])[1] || '';
+    const ddt = (html.match(/Rif\.\s*Mitt[^<]*<[^>]*>([^<]+)</i) || [])[1] || '';
+    const stato = events.length > 0 ? events[0].stato : '';
+
+    return res.status(200).json({
+      success: true,
+      tracking: trackingNumber,
+      info: { destinatario: destinatario.trim(), ddt: ddt.trim(), stato: stato },
+      events: events,
+      debug: html.substring(0, 500),
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
