@@ -27,20 +27,28 @@ export default async function handler(req, res) {
 
     // ... resto uguale ...
 
+       // Recupera user_id dalla apiKey
+    const { data: imp } = await supabase
+      .from('impostazioni')
+      .select('user_id')
+      .eq('api_key', apiKey)
+      .single();
+
+    const userId = imp?.user_id || 'c9ac4541-e872-460c-87e7-309501a294d8';
+
     const { error } = await supabase.from('spedizioni').insert([{
-      tracking_id: 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
+      tracking_id: 'TRK-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0'),
       cliente: destinatario || 'Da assegnare',
       corriere: corriereFinale,
-      tracking: corriereFinale === 'GLS' ? 'AK' + tracking : tracking,
+      tracking: tracking,
       stato: 'In transito',
       data: data || new Date().toLocaleDateString('it-IT'),
       tipo: 'tracking',
       ddt: '',
-      partenza: '',
+      partenza: provincia || '',
       destinazione: localita || '',
       note: indirizzo ? `${indirizzo}, ${cap || ''}` : '',
-      user_id: imp.user_id,
-      destinatario_id: destinatario_id,
+      user_id: userId,
     }]);
 
     if (error) {
