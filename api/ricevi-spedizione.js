@@ -18,16 +18,19 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
     }
-    const { apiKey, tracking, destinatario, localita, provincia, indirizzo, cap, colli, peso, data, corriere } = req.body || {};
-    const corriereFinale = corriere || 'GLS';
+    
+    const { 
+      apiKey, tracking, destinatario, localita, provincia, 
+      indirizzo, cap, colli, peso, data, corriere 
+    } = req.body || {};
+    
+    const corriereFinale = corriere || 'SUSA';
 
     if (!apiKey || !tracking) {
-      return res.status(400).json({ error: 'Dati mancanti' });
+      return res.status(400).json({ error: 'Dati mancanti (apiKey e tracking obbligatori)' });
     }
 
-    // ... resto uguale ...
-
-       // Recupera user_id dalla apiKey
+    // Recupera user_id dalla apiKey
     const { data: imp } = await supabase
       .from('impostazioni')
       .select('user_id')
@@ -36,8 +39,12 @@ export default async function handler(req, res) {
 
     const userId = imp?.user_id || 'c9ac4541-e872-460c-87e7-309501a294d8';
 
-    const { error } = await supabase.from('spedizioni').insert([{
-      tracking_id: 'TRK-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0'),
+    // Genera un tracking_id univoco
+    const trackingId = 'TRK-' + Date.now().toString(36).toUpperCase() + 
+                       '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+
+    const nuovaSpedizione = {
+      tracking_id: trackingId,
       cliente: destinatario || 'Da assegnare',
       corriere: corriereFinale,
       tracking: tracking,
@@ -48,19 +55,30 @@ export default async function handler(req, res) {
       partenza: provincia || '',
       destinazione: localita || '',
       note: indirizzo ? `${indirizzo}, ${cap || ''}` : '',
-      user_id: userId,
-    }]);
+      user_id: userId
+    };
+
+    console.log('📦 Inserimento spedizione:', nuovaSpedizione);
+
+    const { error } = await supabase
+      .from('spedizioni')
+      .insert([nuovaSpedizione]);
 
     if (error) {
+      console.error('❌ Errore Supabase:', error);
       return res.status(500).json({ error: error.message });
     }
 
+    console.log('✅ Spedizione inserita con successo');
+    
     return res.status(200).json({ 
       success: true, 
       message: 'Spedizione ricevuta!',
-      assegnata: !!destinatario_id
+      tracking_id: trackingId
     });
+    
   } catch (error) {
+    console.error('❌ Errore server:', error);
     return res.status(500).json({ error: error.message });
   }
 }
