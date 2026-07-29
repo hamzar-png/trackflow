@@ -24,7 +24,8 @@ export default async function handler(req, res) {
       indirizzo, cap, colli, peso, data, corriere 
     } = req.body || {};
     
-    const corriereFinale = corriere || 'SUSA';
+    // NON forzare GLS come default! Rispetta il corriere passato
+    const corriereFinale = corriere || 'GLS';
 
     if (!apiKey || !tracking) {
       return res.status(400).json({ error: 'Dati mancanti (apiKey e tracking obbligatori)' });
@@ -39,15 +40,17 @@ export default async function handler(req, res) {
 
     const userId = imp?.user_id || 'c9ac4541-e872-460c-87e7-309501a294d8';
 
-    // Genera un tracking_id univoco
     const trackingId = 'TRK-' + Date.now().toString(36).toUpperCase() + 
                        '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+
+    // NON aggiungere prefisso AK a GLS qui - lo gestisce il frontend
+    const trackingFinale = tracking;
 
     const nuovaSpedizione = {
       tracking_id: trackingId,
       cliente: destinatario || 'Da assegnare',
       corriere: corriereFinale,
-      tracking: tracking,
+      tracking: trackingFinale,
       stato: 'In transito',
       data: data || new Date().toLocaleDateString('it-IT'),
       tipo: 'tracking',
@@ -74,7 +77,8 @@ export default async function handler(req, res) {
     return res.status(200).json({ 
       success: true, 
       message: 'Spedizione ricevuta!',
-      tracking_id: trackingId
+      tracking_id: trackingId,
+      corriere: corriereFinale
     });
     
   } catch (error) {
