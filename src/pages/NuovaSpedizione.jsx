@@ -7,6 +7,7 @@ function NuovaSpedizione({ onAggiungi, onChiudi }) {
   const [tipo, setTipo] = useState('');
   const [destinatari, setDestinatari] = useState([]);
   const [loadingApi, setLoadingApi] = useState(false);
+  const [apiKey, setApiKey] = useState('');
   const [formData, setFormData] = useState({
     cliente: '',
     corriere: '',
@@ -21,6 +22,7 @@ function NuovaSpedizione({ onAggiungi, onChiudi }) {
 
   useEffect(() => {
     caricaDestinatari();
+    caricaApiKey();
   }, []);
 
   const caricaDestinatari = async () => {
@@ -34,6 +36,21 @@ function NuovaSpedizione({ onAggiungi, onChiudi }) {
       .order('nome_azienda');
 
     if (data) setDestinatari(data);
+  };
+
+  const caricaApiKey = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('impostazioni')
+      .select('api_key')
+      .eq('user_id', user.id)
+      .single();
+
+    if (data && data.api_key) {
+      setApiKey(data.api_key);
+    }
   };
 
   const handleChange = (e) => {
@@ -51,7 +68,6 @@ function NuovaSpedizione({ onAggiungi, onChiudi }) {
       const result = await trackGLS(formData.tracking);
       console.log('Risultato GLS:', result);
 
-      // Prendi il primo pacco
       const parcel = result.parcels?.[0] || result[0];
 
       if (parcel) {
@@ -71,47 +87,51 @@ function NuovaSpedizione({ onAggiungi, onChiudi }) {
     setLoadingApi(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const id = 'TRK-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-
-    let nuovaSpedizione;
-
-    if (tipo === 'tracking') {
-      nuovaSpedizione = {
-        id,
-        cliente: formData.cliente,
-        corriere: formData.corriere,
-        tracking: formData.tracking,
-        stato: formData.stato || 'In attesa',
-        data: formData.data,
-        tipo: 'tracking',
-        ddt: '',
-        partenza: '',
-        destinazione: '',
-        note: '',
-        destinatario_id: formData.destinatario_id || null,
-      };
-    } else {
-      nuovaSpedizione = {
-        id,
-        cliente: formData.cliente,
-        corriere: 'Tratta diretta',
-        tracking: '',
-        stato: 'In partenza',
-        data: formData.data,
-        tipo: 'manuale',
-        ddt: formData.ddt || '',
-        partenza: formData.partenza || '',
-        destinazione: formData.destinazione || '',
-        note: formData.note || '',
-        destinatario_id: formData.destinatario_id || null,
-      };
+    if (!apiKey) {
+      alert('API Key non trovata. Completa la configurazione nelle Impostazioni.');
+      return;
     }
 
-    onAggiungi(nuovaSpedizione);
-    onChiudi();
+    const spedizione = {
+      apiKey: apiKey,
+      destinatario: formData.cliente,
+      corriere: formData.corriere,
+      tracking: formData.tracking,
+      data: formData.data,
+      localita: formData.destinazione || '',
+      provincia: '',
+      indirizzo: '',
+      cap: '',
+      note: formData.note || '',
+      destinatario_id: formData.destinatario_id || null,
+    };
+
+    console.log('📤 Invio a TrackFlow API:', spedizione);
+
+    try {
+      const response = await fetch('https://trackflow-phi-red.vercel.app/api/ricevi-spedizione', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(spedizione)
+      });
+
+      const result = await response.json();
+      console.log('✅ Risposta API:', result);
+
+      if (result.success) {
+        alert('Spedizione aggiunta con successo!');
+        onChiudi();
+        window.location.reload();
+      } else {
+        alert('Errore: ' + (result.error || 'Errore sconosciuto'));
+      }
+    } catch (error) {
+      console.error('❌ Errore:', error);
+      alert('Errore di connessione: ' + error.message);
+    }
   };
 
   return (
