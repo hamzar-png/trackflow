@@ -24,14 +24,12 @@ export default async function handler(req, res) {
       indirizzo, cap, colli, peso, data, corriere 
     } = req.body || {};
     
-    // NON forzare GLS come default! Rispetta il corriere passato
     const corriereFinale = corriere || 'GLS';
 
     if (!apiKey || !tracking) {
       return res.status(400).json({ error: 'Dati mancanti (apiKey e tracking obbligatori)' });
     }
 
-    // Recupera user_id dalla apiKey
     const { data: imp } = await supabase
       .from('impostazioni')
       .select('user_id')
@@ -43,8 +41,11 @@ export default async function handler(req, res) {
     const trackingId = 'TRK-' + Date.now().toString(36).toUpperCase() + 
                        '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
-    // NON aggiungere prefisso AK a GLS qui - lo gestisce il frontend
-    const trackingFinale = tracking;
+    // Aggiungi prefisso AK solo per GLS se mancante
+    let trackingFinale = tracking;
+    if (corriereFinale === 'GLS' && !tracking.startsWith('AK')) {
+      trackingFinale = 'AK' + tracking;
+    }
 
     const nuovaSpedizione = {
       tracking_id: trackingId,
